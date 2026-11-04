@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11141b">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Cadence – carnet de séances</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#11141b; --s1:#181d27; --s2:#212838; --s3:#2c3548; --line:#2c3446;
+  --text:#e8e9ee; --mute:#8d96a9; --danger:#ff8a8a; --ok:#7bd88f;
+}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Segoe UI Variable Text","Segoe UI",Roboto,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #9db8ff;outline-offset:2px}
+h1,h2,h3{line-height:1.2}
+.mute{color:var(--mute)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- Structure ---------- */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100dvh}
+.side{position:sticky;top:0;height:100dvh;padding:24px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 12px 20px;font-size:21px;font-weight:700;letter-spacing:-.02em}
+.brand i{width:24px;height:24px;border-radius:50%;background:conic-gradient(#ff7b72 0 18%,transparent 0 20%,#f2cc60 0 38%,transparent 0 40%,#7ee787 0 58%,transparent 0 60%,#56c7f5 0 78%,transparent 0 80%,#a98bff 0 98%,transparent 0);-webkit-mask:radial-gradient(circle,transparent 6px,#000 7px);mask:radial-gradient(circle,transparent 6px,#000 7px)}
+.navb{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;border:0;background:none;color:var(--mute);font-weight:600;text-align:left}
+.navb svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.navb:hover{color:var(--text)}
+.navb[aria-current="page"]{background:var(--s2);color:var(--text)}
+main{padding:28px clamp(16px,3vw,40px) 56px;width:100%;max-width:1120px}
+@media(max-width:820px){
+  .app{display:block}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);background:rgba(17,20,27,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);z-index:20}
+  .brand{display:none}
+  .navb{flex:1;flex-direction:column;gap:3px;font-size:11px;padding:6px 4px;align-items:center;justify-content:center;text-align:center}
+  main{padding:calc(18px + env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom))}
+}
+
+/* ---------- Éléments communs ---------- */
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:22px}
+.head h1{font-size:clamp(26px,4vw,34px);font-weight:700;letter-spacing:-.02em}
+.head p{color:var(--mute);margin-top:2px}
+.head-r{display:flex;gap:8px;align-items:center;flex:none}
+.icon-btn{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--s1);color:var(--mute);font-size:20px;line-height:1}
+.icon-btn:hover{color:var(--text);background:var(--s2)}
+.icon-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card>h2,.sect-h{font-size:17px;font-weight:650;margin-bottom:12px;letter-spacing:-.01em}
+.stack{display:grid;gap:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.row2{grid-template-columns:1fr}}
+.btn{border:1px solid var(--line);background:var(--s2);padding:9px 16px;border-radius:10px;font-weight:600;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{background:var(--s3)}
+.btn.pri{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.pri:hover{background:#fff}
+.btn.ghost{background:none}
+.btn.danger{color:var(--danger)}
+.btn.sm{min-height:34px;padding:5px 12px;font-size:14px}
+.btn.block{width:100%}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%;min-height:42px}
+textarea{resize:vertical;min-height:84px;line-height:1.45}
+input[type=radio],input[type=checkbox]{width:auto;min-height:0;accent-color:#e8e9ee}
+input[type=color]{padding:2px;min-height:34px;width:44px;height:34px;border-radius:8px}
+.f{display:grid;gap:6px}
+.f>span,.lbl{font-size:13px;font-weight:600;color:var(--mute)}
+.fld{display:grid;gap:6px}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;color:var(--mute);padding:6px 14px;border-radius:9px;font-weight:600;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
+.chipbtn{border:1px solid var(--line);background:none;color:var(--mute);padding:5px 12px;border-radius:20px;font-weight:600;font-size:14px;min-height:34px}
+.chipbtn[aria-pressed="true"]{color:var(--text);border-color:var(--text);background:var(--s2)}
+.err{color:var(--danger);font-size:14px;min-height:0}
+.err:empty{display:none}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none;display:inline-block}
+.empty{padding:34px 18px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:16px;display:grid;gap:12px;justify-items:center}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--text);background:var(--s2)}
+.opt small{display:block;color:var(--mute);font-size:13px}
+.opt input{margin-top:4px}
+.tag{font-size:12.5px;font-weight:650;margin-left:auto;white-space:nowrap}
+.tag.done{color:var(--ok)}.tag.missed{color:var(--danger)}.tag.todo{color:var(--mute)}
+
+/* ---------- Page globale ---------- */
+.pbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.pnav{display:flex;align-items:center;gap:4px}
+.pnav b{min-width:150px;text-align:center;font-weight:650}
+.stats{display:flex;flex-wrap:wrap;gap:8px 34px;margin-bottom:22px}
+.stats div{display:grid}
+.stats strong{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.stats span{font-size:13px;color:var(--mute)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-bottom:14px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.arow{padding:12px 0;border-top:1px solid var(--line)}
+.arow:first-of-type{border-top:0}
+.arow-h{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.arow-h b{font-weight:650}
+.arow-h span.cnt{margin-left:auto;font-size:13.5px;color:var(--mute)}
+.bar{display:flex;gap:3px;height:14px}
+.bar i{display:block;border-radius:4px;min-width:0}
+.b-done{background:var(--c)}
+.b-todo{background:color-mix(in srgb,var(--c) 30%,transparent);box-shadow:inset 0 0 0 1.5px var(--c)}
+.b-miss{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 55%,transparent) 0 3px,transparent 3px 6px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent)}
+.lg-done{background:var(--mute)}
+.lg-todo{background:color-mix(in srgb,var(--mute) 30%,transparent);box-shadow:inset 0 0 0 1.5px var(--mute)}
+.lg-miss{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--mute) 55%,transparent) 0 3px,transparent 3px 6px);box-shadow:inset 0 0 0 1px var(--mute)}
+.chart-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chart-h h2{margin:0}
+.chartbox{position:relative;margin-top:6px}
+.chartbox svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.chartbox text{fill:var(--mute);font-size:11px}
+.tip{position:absolute;top:0;transform:translateX(-50%);background:var(--s3);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;pointer-events:none;white-space:nowrap;z-index:2;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.tip b{display:block;margin-bottom:3px}
+.tip div{display:flex;align-items:center;gap:6px}
+.lgline{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:10px}
+.lgline span{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- Activité du jour ---------- */
+.dayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.dayname{font-size:clamp(38px,8vw,64px);font-weight:750;letter-spacing:-.035em;line-height:1}
+.daydate{color:var(--mute);font-size:17px;margin-top:6px}
+.daynav{display:flex;gap:8px;align-items:center;position:relative}
+.pickwrap{position:relative}
+.pickwrap input{position:absolute;inset:0;opacity:0;pointer-events:none;width:100%}
+.scards{display:grid;gap:12px;margin-bottom:18px}
+.scard{position:relative;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px 16px 16px 24px;overflow:hidden;display:grid;gap:10px}
+.scard::before{content:"";position:absolute;inset:0 auto 0 0;width:7px;background:var(--c)}
+.scard.st-missed::before{background:repeating-linear-gradient(180deg,var(--c) 0 6px,transparent 6px 11px)}
+.scard.st-done{border-color:color-mix(in srgb,var(--c) 50%,var(--line))}
+.scard-top{display:flex;align-items:center;gap:10px}
+.scard-top h3{font-size:18px;font-weight:650;letter-spacing:-.01em}
+.smeta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--mute);font-size:13.5px}
+.sinfo{white-space:pre-wrap;color:#cfd3dd}
+.res{display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.rk{font-size:15px;color:var(--mute)}.rk b{font-size:26px;color:var(--text);letter-spacing:-.02em}
+.rx{list-style:none;padding:0;display:grid;gap:4px}
+.rx li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.rx li:last-child{border:0}
+.rx em{font-style:normal;color:var(--mute);text-align:right}
+.rn{white-space:pre-wrap;color:#cfd3dd;font-size:14px}
+
+/* ---------- Planification ---------- */
+.plangrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:980px){.plangrid{grid-template-columns:1fr}}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.dbtn{min-width:48px;border:1px solid var(--line);background:none;border-radius:10px;padding:8px 10px;font-weight:600;color:var(--mute);min-height:40px}
+.dbtn[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.planform{display:grid;gap:14px}
+.planform[data-mode="single"] .only-rec,.planform[data-mode="rec"] .only-single{display:none}
+.planform:not([data-km="1"]) .only-km{display:none}
+.planform[data-end="weeks"] .end-date,.planform[data-end="date"] .end-weeks{display:none}
+.preview{font-size:14px;color:var(--ok);min-height:20px}
+.lrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.lrow:first-of-type{border-top:0}
+.lrow .grow{flex:1;min-width:0}
+.lrow .grow b{display:block;font-weight:650}
+.lrow .grow small{display:block;color:var(--mute);font-size:13px}
+.lblock{display:grid;gap:0}
+.sect-gap{display:grid;gap:18px}
+
+/* ---------- Calendrier ---------- */
+.cbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wd{font-size:12.5px;font-weight:650;color:var(--mute);padding:0 4px 4px}
+.mday{min-height:104px;background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:3px;text-align:left;min-width:0;align-items:stretch}
+.mday:hover{border-color:var(--mute)}
+.mday.out{opacity:.38}
+.mday .n{font-size:12.5px;color:var(--mute);font-weight:650;align-self:flex-start;padding:0 2px}
+.mday.today .n{background:var(--text);color:var(--bg);border-radius:20px;padding:0 8px}
+.more{font-size:11px;color:var(--mute);padding-left:4px}
+.chip{display:block;font-size:11.5px;line-height:1.3;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.chip.st-done{background:var(--c);color:var(--ink)}
+.chip.st-todo{background:color-mix(in srgb,var(--c) 26%,var(--bg));color:var(--text);box-shadow:inset 3px 0 0 var(--c)}
+.chip.st-missed{padding:1px 5px;border:1px dashed color-mix(in srgb,var(--c) 75%,transparent);color:color-mix(in srgb,var(--c) 65%,var(--mute))}
+@media(max-width:600px){.mday{min-height:80px;padding:4px 3px}.chip{font-size:9.5px;padding:1px 3px}.chip.st-missed{padding:0 2px}.wd{font-size:11px;padding:0 2px 4px}}
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:14px}
+.ymonth{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:12px}
+.ymonth>button{border:0;background:none;font-weight:650;font-size:15px;margin-bottom:8px;padding:2px 0}
+.ymonth>button:hover{text-decoration:underline}
+.ydays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ydn{font-size:10px;color:var(--mute);text-align:center;padding-bottom:2px}
+.yd{aspect-ratio:1;position:relative;border-radius:5px;font-size:10.5px;display:grid;place-items:center;color:var(--mute);border:0;background:none;padding:0}
+.yd:hover{background:var(--s2)}
+.yd .segs{position:absolute;inset:0;display:flex;border-radius:5px;overflow:hidden}
+.sg{flex:1;background:var(--c)}
+.sg.st-todo{background:color-mix(in srgb,var(--c) 38%,transparent);box-shadow:inset 0 0 0 1.5px var(--c)}
+.sg.st-missed{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 55%,transparent) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent)}
+.yd b{position:relative;font-weight:650}
+.yd.has b{color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}
+.yd.today{box-shadow:0 0 0 1.5px var(--text)}
+.yd.blank{pointer-events:none}
+
+/* ---------- Fenêtres modales ---------- */
+.overlay{position:fixed;inset:0;background:rgba(5,7,12,.68);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;animation:fade .15s}
+.sheet{background:var(--s1);border:1px solid var(--line);border-radius:20px;width:min(580px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:22px;animation:rise .18s;display:grid;gap:16px;outline:0}
+.mh{display:flex;gap:12px;align-items:center}
+.mh h2{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.mh p{color:var(--mute);font-size:14px}
+.mfoot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:4px}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@media(max-width:600px){
+  .overlay{align-items:flex-end;padding:0}
+  .sheet{border-radius:20px 20px 0 0;max-height:92dvh;padding-bottom:calc(22px + env(safe-area-inset-bottom));width:100%}
+  .mfoot .btn{flex:1}
+}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid transparent;background:var(--c);padding:0}
+.sw[aria-pressed="true"]{border-color:var(--text);box-shadow:0 0 0 2px var(--s1) inset}
+.exo{display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;margin-bottom:8px}
+@media(max-width:480px){.exo{grid-template-columns:1fr 40px}.exo input[name=ep]{grid-column:1/2}.exo .icon-btn{grid-row:1/3;grid-column:2}}
+.exo .icon-btn{width:40px;height:42px}
+.feel{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.feel button{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 2px;display:grid;gap:2px;justify-items:center;font-size:11px;color:var(--mute)}
+.feel button span{font-size:24px;line-height:1.1}
+.feel button[aria-pressed="true"]{border-color:var(--text);background:var(--s3);color:var(--text)}
+details.plan{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+details.plan summary{cursor:pointer;font-weight:600;color:var(--mute)}
+details.plan p{margin-top:8px;white-space:pre-wrap}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:rise .18s;max-width:90vw}
+@media(min-width:821px){.toast{bottom:28px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" aria-label="Navigation principale" id="nav"></nav>
+  <main id="view"></main>
+</div>
+<div id="modal"></div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Cadence – carnet de séances
+   Données stockées localement (localStorage), sauvegarde JSON possible.
+   ===================================================================== */
+
+// ---------- Utilitaires ----------
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+const pad = n => String(n).padStart(2, '0');
+const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmt(d); };
+const today = () => fmt(new Date());
+const dow = s => (parse(s).getDay() + 6) % 7;          // 0 = lundi
+const startOfWeek = s => addDays(s, -dow(s));
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const DOW = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DOWL = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const MS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const longDate = s => { const d = parse(s); return `${DOWL[dow(s)]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const shortDate = s => { const d = parse(s); return `${d.getDate()} ${MS[d.getMonth()]}`; };
+const nf = n => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+const parseNum = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) || n < 0 ? null : n; };
+const val = (root, n) => { const e = root.querySelector(`[name="${n}"]`); return e ? e.value : ''; };
+function ink(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#10131a' : '#ffffff'; }
+
+// ---------- Constantes ----------
+const TYPES = { distance: 'Km / distance', perf: 'Perf / exos', other: 'Autre' };
+const TYPE_HELP = { distance: 'Saisie des kilomètres à la validation', perf: 'Liste d’exercices avec leur performance', other: 'Notes libres à la validation' };
+const FEEL = [['😫', 'Très dur'], ['😕', 'Difficile'], ['😐', 'Correct'], ['🙂', 'Bien'], ['😄', 'Excellent']];
+const ST = { done: 'Réalisée', missed: 'Non réalisée', todo: 'À faire' };
+const PAL = ['#ff7b72', '#ffa657', '#f2cc60', '#7ee787', '#3fb9a8', '#56c7f5', '#6e9bff', '#a98bff', '#e07bd9', '#ff8fb1', '#c9a27e', '#9aa7b8'];
+
+// ---------- Données ----------
+const KEY = 'cadence.v1';
+function load() {
+  try { const r = JSON.parse(localStorage.getItem(KEY)); if (r && Array.isArray(r.sessions) && Array.isArray(r.activities)) { r.series = r.series || []; return r; } } catch (e) {}
+  return { v: 1, activities: [], sessions: [], series: [] };
+}
+let db = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { toast('Sauvegarde impossible : le stockage du navigateur est bloqué ou plein.'); } }
+const getS = id => db.sessions.find(s => s.id === id);
+const getA = id => db.activities.find(a => a.id === id);
+const act = id => getA(id) || { id: '', name: 'Activité supprimée', color: '#9aa7b8', type: 'other' };
+const status = s => s.done ? 'done' : (s.date < today() ? 'missed' : 'todo');
+const typeOf = id => (getA(id) || {}).type;
+function sortedSessions(list) {
+  const order = new Map(db.activities.map((a, i) => [a.id, i]));
+  return list.slice().sort((a, b) => (order.get(a.actId) ?? 99) - (order.get(b.actId) ?? 99));
+}
+function byDate() {
+  const m = new Map();
+  db.sessions.forEach(s => { if (!m.has(s.date)) m.set(s.date, []); m.get(s.date).push(s); });
+  m.forEach((v, k) => m.set(k, sortedSessions(v)));
+  return m;
+}
+function cleanSeries() { const alive = new Set(db.sessions.map(s => s.seriesId).filter(Boolean)); db.series = db.series.filter(x => alive.has(x.id)); }
+function freeColor() { const used = new Set(db.activities.map(a => a.color)); return PAL.find(c => !used.has(c)) || PAL[Math.floor(Math.random() * PAL.length)]; }
+function genDates(start, days, endStr) {
+  const out = [];
+  for (let d = start; d <= endStr && out.length < 400; d = addDays(d, 1)) if (days.includes(dow(d))) out.push(d);
+  return out;
+}
+
+// ---------- État de l’interface ----------
+const PAGES = { global: 'Global', today: 'Activité du jour', plan: 'Planifier', calendar: 'Calendrier' };
+const t0 = new Date();
+const ui = {
+  page: 'global',
+  day: today(), lastToday: today(),
+  per: { unit: 'month', anchor: today() },
+  chart: { cumul: false, planned: false },
+  cal: { view: 'month', y: t0.getFullYear(), m: t0.getMonth() },
+  pd: { actId: '', mode: 'single', days: [0], weeks: 8, endType: 'weeks' }
+};
+let chartCtx = null;
+let deferredInstall = null;
+
+// ---------- Icônes ----------
+const IC = {
+  global: '<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg>',
+  plan: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
+};
+const chevL = '<svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>';
+const chevR = '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>';
+const calIc = IC.calendar;
+
+// ---------- Fenêtres modales (pile + bouton « retour » Android) ----------
+const modals = [];
+let skipPop = 0;
+function openModal(m) { modals.push(m); try { history.pushState({ m: modals.length }, ''); } catch (e) {} renderModals(); }
+function closeModal(n = 1) {
+  if (!modals.length) return;
+  n = Math.min(n, modals.length);
+  modals.length -= n;
+  renderModals();
+  try { skipPop++; history.go(-n); } catch (e) { skipPop--; }
+}
+window.addEventListener('popstate', e => {
+  if (skipPop > 0) { skipPop--; return; }
+  const depth = (e.state && e.state.m) || 0;
+  if (modals.length > depth) { modals.length = depth; renderModals(); }
+});
+function renderModals() {
+  const host = $('#modal');
+  if (!modals.length) { host.innerHTML = ''; document.body.classList.remove('lock'); return; }
+  const m = modals[modals.length - 1];
+  host.innerHTML = `<div class="overlay"><div class="sheet" role="dialog" aria-modal="true" tabindex="-1">${m.build()}</div></div>`;
+  document.body.classList.add('lock');
+  const sheet = $('.sheet', host);
+  if (m.mount) m.mount(sheet);
+  sheet.focus({ preventScroll: true });
+}
+function confirmModal({ title, text, ok = 'Confirmer', danger = false, onOk }) {
+  openModal({
+    build: () => `<div class="mh"><h2>${esc(title)}</h2></div><p>${text}</p>
+      <div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button><button class="btn ${danger ? 'danger' : 'pri'}" data-a="modalOk">${esc(ok)}</button></div>`,
+    onOk
+  });
+}
+function toast(msg) {
+  const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  $('#toast').replaceChildren(el); setTimeout(() => el.remove(), 2600);
+}
+
+// ---------- Navigation / structure ----------
+function renderNav() {
+  $('#nav').innerHTML = `<div class="brand"><i></i>Cadence</div>` +
+    Object.entries(PAGES).map(([k, n]) => `<button class="navb" data-a="nav" data-p="${k}" ${ui.page === k ? 'aria-current="page"' : ''}>${IC[k === 'global' ? 'global' : k]}<span>${n}</span></button>`).join('');
+}
+function pageHead(title, sub = '', right = '') {
+  return `<header class="head"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="head-r">${right}<button class="icon-btn" data-a="settings" aria-label="Données et réglages">${IC.gear}</button></div></header>`;
+}
+function render() {
+  if (ui.lastToday !== today()) { if (ui.day === ui.lastToday) ui.day = today(); ui.lastToday = today(); }
+  renderNav();
+  $('#view').innerHTML = ({ global: pageGlobal, today: pageToday, plan: pagePlan, calendar: pageCalendar })[ui.page]();
+  document.title = `${PAGES[ui.page]} – Cadence`;
+  afterRender();
+  renderModals();
+}
+function afterRender() {
+  $$('.planform').forEach(updatePreview);
+  bindChart();
+}
+
+// ---------- Blocs partagés ----------
+function resultHtml(s) {
+  const r = s.result; if (!r) return '';
+  const a = act(s.actId), parts = [];
+  if (a.type === 'distance' && r.km != null) parts.push(`<div class="rk"><b>${nf(r.km)}</b> km</div>`);
+  if (a.type === 'perf' && r.exos && r.exos.length) parts.push(`<ul class="rx">${r.exos.map(e => `<li><span>${esc(e.n)}</span><em>${esc(e.p)}</em></li>`).join('')}</ul>`);
+  if (r.feeling) parts.push(`<div>${FEEL[r.feeling - 1][0]} ${FEEL[r.feeling - 1][1]}</div>`);
+  if (r.note) parts.push(`<p class="rn">${esc(r.note)}</p>`);
+  return parts.length ? `<div class="res">${parts.join('')}</div>` : '';
+}
+function sessionCard(s, ctx) {
+  const a = act(s.actId), st = status(s);
+  const meta = [TYPES[a.type]];
+  if (a.type === 'distance' && s.km != null) meta.push(`${nf(s.km)} km prévus`);
+  if (s.seriesId) meta.push('Récurrente');
+  let actions = '';
+  if (ctx === 'today') {
+    actions = s.done
+      ? `<button class="btn sm" data-a="validate" data-id="${s.id}">Modifier les données</button><button class="btn sm ghost" data-a="unvalidate" data-id="${s.id}">Annuler la validation</button><button class="btn sm ghost" data-a="editS" data-id="${s.id}">Modifier la séance</button>`
+      : `<button class="btn pri" data-a="validate" data-id="${s.id}">Valider la séance</button><button class="btn ghost" data-a="editS" data-id="${s.id}">Modifier</button>`;
+  } else {
+    actions = `<button class="btn sm" data-a="editS" data-id="${s.id}">Modifier</button>`;
+  }
+  return `<article class="scard st-${st}" style="--c:${a.color}">
+    <div class="scard-top"><h3>${esc(a.name)}</h3><span class="tag ${st}">${s.done ? '✔ ' : ''}${ST[st]}</span></div>
+    <div class="smeta">${meta.map(esc).join('<span>·</span>')}</div>
+    ${s.info ? `<div class="sinfo">${esc(s.info)}</div>` : '<div class="mute">Pas de détail pour cette séance.</div>'}
+    ${resultHtml(s)}
+    <div class="btns">${actions}</div></article>`;
+}
+
+// =====================================================================
+// PAGE 1 – GLOBALE
+// =====================================================================
+function periodRange(unit, anchor) {
+  const d = parse(anchor), y = d.getFullYear(), m = d.getMonth();
+  if (unit === 'week') { const s = startOfWeek(anchor); return [s, addDays(s, 6)]; }
+  if (unit === 'month') return [fmt(new Date(y, m, 1)), fmt(new Date(y, m + 1, 0))];
+  if (unit === 'quarter') { const q = Math.floor(m / 3) * 3; return [fmt(new Date(y, q, 1)), fmt(new Date(y, q + 3, 0))]; }
+  if (unit === 'year') return [`${y}-01-01`, `${y}-12-31`];
+  const ds = db.sessions.map(s => s.date).sort();
+  return ds.length ? [ds[0], ds[ds.length - 1]] : [today(), today()];
+}
+function shiftAnchor(unit, anchor, dir) {
+  const d = parse(anchor);
+  if (unit === 'week') return addDays(anchor, 7 * dir);
+  if (unit === 'month') return fmt(new Date(d.getFullYear(), d.getMonth() + dir, 1));
+  if (unit === 'quarter') return fmt(new Date(d.getFullYear(), d.getMonth() + 3 * dir, 1));
+  if (unit === 'year') return fmt(new Date(d.getFullYear() + dir, 0, 1));
+  return anchor;
+}
+function periodLabel(unit, anchor) {
+  const d = parse(anchor), [s, e] = periodRange(unit, anchor);
+  if (unit === 'week') return `${shortDate(s)} – ${shortDate(e)}`;
+  if (unit === 'month') return `${cap(MONTHS[d.getMonth()])} ${d.getFullYear()}`;
+  if (unit === 'quarter') return `T${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`;
+  if (unit === 'year') return String(d.getFullYear());
+  return 'Tout l’historique';
+}
+function makeBuckets(rs, re, unit) {
+  const out = [];
+  if (unit === 'week') {
+    for (let d = rs; d <= re; d = addDays(d, 1)) out.push({ s: d, e: d, label: `${DOW[dow(d)].toLowerCase()} ${parse(d).getDate()}` });
+  } else {
+    for (let w = startOfWeek(rs); w <= re; w = addDays(w, 7)) {
+      const s = w < rs ? rs : w, e = addDays(w, 6) > re ? re : addDays(w, 6);
+      out.push({ s, e, label: shortDate(s) });
+    }
+  }
+  return out;
+}
+function niceMax(v) {
+  if (v <= 0) return 4;
+  const p = Math.pow(10, Math.floor(Math.log10(v / 4)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * p).find(k => k * 4 >= v) || 10 * p;
+  return step * 4;
+}
+function buildChart(rs, re, unit) {
+  const buckets = makeBuckets(rs, re, unit), n = buckets.length, td = today();
+  const series = [];
+  db.activities.filter(a => a.type === 'distance').forEach(a => {
+    const mine = db.sessions.filter(s => s.actId === a.id);
+    let real = buckets.map(b => mine.filter(s => s.done && s.date >= b.s && s.date <= b.e).reduce((t, s) => t + ((s.result && s.result.km) || 0), 0));
+    let plan = buckets.map(b => mine.filter(s => s.date >= b.s && s.date <= b.e).reduce((t, s) => t + (s.km || 0), 0));
+    if (ui.chart.cumul) { let r = 0, p = 0; real = real.map(v => r += v); plan = plan.map(v => p += v); }
+    real = real.map((v, i) => buckets[i].s > td ? null : v);
+    const hasReal = real.some(v => v), hasPlan = plan.some(v => v);
+    if (hasReal) series.push({ name: a.name, color: a.color, vals: real, dashed: false });
+    if (ui.chart.planned && hasPlan) series.push({ name: a.name + ' (prévu)', color: a.color, vals: plan, dashed: true });
+  });
+  if (!series.length) return '';
+  const W = 720, H = 270, ml = 42, mr = 14, mt = 12, mb = 28, iw = W - ml - mr, ih = H - mt - mb;
+  const ymax = niceMax(Math.max(...series.flatMap(s => s.vals.filter(v => v != null))));
+  const x = i => ml + (n === 1 ? iw / 2 : iw * i / (n - 1));
+  const y = v => mt + ih - (v / ymax) * ih;
+  let g = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = ymax * i / 4, yy = y(v);
+    g += `<line x1="${ml}" x2="${W - mr}" y1="${yy}" y2="${yy}" stroke="#2c3446" stroke-width="1"/><text x="${ml - 8}" y="${yy + 4}" text-anchor="end">${nf(Math.round(v * 10) / 10)}</text>`;
+  }
+  const step = Math.max(1, Math.ceil(n / 8));
+  buckets.forEach((b, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(b.label)}</text>`; });
+  series.forEach(s => {
+    let d = '', pen = false;
+    s.vals.forEach((v, i) => { if (v == null) { pen = false; return; } d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)} `; pen = true; });
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.dashed ? 1.8 : 2.6}" stroke-linecap="round" stroke-linejoin="round" ${s.dashed ? 'stroke-dasharray="5 5" opacity=".75"' : ''}/>`;
+    if (!s.dashed && n <= 45) s.vals.forEach((v, i) => { if (v != null) g += `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.4" fill="${s.color}"/>`; });
+  });
+  g += `<line class="cur" x1="0" x2="0" y1="${mt}" y2="${mt + ih}" stroke="#8d96a9" stroke-width="1" style="display:none"/>`;
+  chartCtx = { W, ml, iw, n, x, buckets, series };
+  const lg = series.map(s => `<span><i class="dot" style="--c:${s.color};${s.dashed ? 'opacity:.5' : ''}"></i>${esc(s.name)}</span>`).join('');
+  return `<div class="chartbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Kilomètres par ${unit === 'week' ? 'jour' : 'semaine'}">${g}</svg><div class="tip" hidden></div></div><div class="lgline">${lg}</div>`;
+}
+function bindChart() {
+  const box = $('.chartbox'); if (!box || !chartCtx) return;
+  const svg = $('svg', box), tip = $('.tip', box), cur = $('.cur', svg), c = chartCtx;
+  const move = e => {
+    const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * c.W;
+    let i = c.n === 1 ? 0 : Math.round((vx - c.ml) / c.iw * (c.n - 1));
+    i = Math.max(0, Math.min(c.n - 1, i));
+    const px = c.x(i);
+    cur.setAttribute('x1', px); cur.setAttribute('x2', px); cur.style.display = '';
+    const unit = ui.chart.cumul ? 'km cumulés' : 'km';
+    tip.hidden = false;
+    tip.innerHTML = `<b>${esc(c.buckets[i].label)}</b>` + c.series.filter(s => s.vals[i] != null).map(s => `<div><i class="dot" style="--c:${s.color}"></i>${esc(s.name)} : ${nf(s.vals[i])} ${unit}</div>`).join('');
+    const left = px / c.W * r.width;
+    tip.style.left = Math.min(Math.max(left, 90), r.width - 90) + 'px';
+  };
+  svg.addEventListener('pointermove', move);
+  svg.addEventListener('pointerdown', move);
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { tip.hidden = true; cur.style.display = 'none'; } });
+}
+function pageGlobal() {
+  const { unit, anchor } = ui.per;
+  const [rs, re] = periodRange(unit, anchor);
+  const ss = db.sessions.filter(s => s.date >= rs && s.date <= re);
+  const cnt = { done: 0, todo: 0, missed: 0 };
+  ss.forEach(s => cnt[status(s)]++);
+  const km = ss.filter(s => s.done && typeOf(s.actId) === 'distance').reduce((t, s) => t + ((s.result && s.result.km) || 0), 0);
+  const hasKm = db.activities.some(a => a.type === 'distance');
+
+  const units = [['week', 'Semaine'], ['month', 'Mois'], ['quarter', 'Trimestre'], ['year', 'Année'], ['all', 'Tout']];
+  const isCur = unit === 'all' || periodRange(unit, anchor)[0] === periodRange(unit, today())[0];
+  const bar = `<div class="pbar"><div class="seg" role="group" aria-label="Période">${units.map(([k, n]) => `<button data-a="per" data-u="${k}" aria-pressed="${unit === k}">${n}</button>`).join('')}</div>
+    ${unit !== 'all' ? `<div class="pnav"><button class="icon-btn" data-a="perNav" data-d="-1" aria-label="Période précédente">${chevL}</button><b>${esc(periodLabel(unit, anchor))}</b><button class="icon-btn" data-a="perNav" data-d="1" aria-label="Période suivante">${chevR}</button></div>${isCur ? '' : '<button class="btn sm" data-a="perToday">Aujourd’hui</button>'}` : ''}</div>`;
+
+  const rows = db.activities.map(a => {
+    const m = ss.filter(s => s.actId === a.id), c = { done: 0, todo: 0, missed: 0 };
+    m.forEach(s => c[status(s)]++);
+    return { a, c, total: m.length };
+  }).filter(r => r.total > 0);
+  const max = Math.max(1, ...rows.map(r => r.total));
+  const list = rows.length ? rows.map(({ a, c, total }) => `<div class="arow" style="--c:${a.color}">
+      <div class="arow-h"><i class="dot"></i><b>${esc(a.name)}</b><span class="cnt">${c.done} faite${c.done > 1 ? 's' : ''} · ${c.todo} à venir · ${c.missed} non réalisée${c.missed > 1 ? 's' : ''}</span></div>
+      <div class="bar" style="width:${Math.max(6, total / max * 100)}%">${c.done ? `<i class="b-done" style="flex:${c.done}"></i>` : ''}${c.todo ? `<i class="b-todo" style="flex:${c.todo}"></i>` : ''}${c.missed ? `<i class="b-miss" style="flex:${c.missed}"></i>` : ''}</div></div>`).join('')
+    : `<div class="empty"><span>${db.activities.length ? 'Aucune séance sur cette période.' : 'Aucune activité pour le moment.'}</span><button class="btn" data-a="nav" data-p="plan">Aller à la planification</button></div>`;
+
+  let chart = '';
+  if (!hasKm) chart = `<p class="mute">Aucune activité de type « Km / distance ». Crées-en une dans Planifier pour suivre ta courbe de kilomètres.</p>`;
+  else chart = buildChart(rs, re, unit) || `<p class="mute">Aucun kilomètre enregistré sur cette période. Les kilomètres apparaissent quand tu valides une séance de type distance.</p>`;
+  if (!hasKm || !chart.includes('chartbox')) chartCtx = null;
+
+  return pageHead('Vue globale', 'Où en sont tes séances') + bar +
+    `<div class="stats"><div><strong>${cnt.done}</strong><span>réalisées</span></div><div><strong>${cnt.todo}</strong><span>à venir</span></div><div><strong>${cnt.missed}</strong><span>non réalisées</span></div>${hasKm ? `<div><strong>${nf(km)}</strong><span>km parcourus</span></div>` : ''}</div>
+    <div class="plangrid" style="grid-template-columns:minmax(0,1fr)"><div class="sect-gap">
+      <section class="card"><h2>Séances par activité</h2>
+        <div class="legend"><span><i class="lg-done"></i>Réalisées</span><span><i class="lg-todo"></i>À venir</span><span><i class="lg-miss"></i>Non réalisées</span></div>${list}</section>
+      <section class="card"><div class="chart-h"><h2>Kilomètres par ${unit === 'week' ? 'jour' : 'semaine'}</h2>
+        <div class="btns"><button class="chipbtn" data-a="chartOpt" data-k="cumul" aria-pressed="${ui.chart.cumul}">Cumul</button><button class="chipbtn" data-a="chartOpt" data-k="planned" aria-pressed="${ui.chart.planned}">Afficher le prévu</button></div></div>${chart}</section>
+    </div></div>`;
+}
+
+// =====================================================================
+// PAGE 2 – ACTIVITÉ DU JOUR
+// =====================================================================
+function pageToday() {
+  const d = ui.day, list = byDate().get(d) || [], isT = d === today();
+  const done = list.filter(s => s.done).length;
+  const nav = `<div class="daynav">
+    <button class="icon-btn" data-a="dayNav" data-d="-1" aria-label="Jour précédent">${chevL}</button>
+    <button class="icon-btn" data-a="showPicker" aria-label="Choisir une date">${calIc}</button>
+    <span class="pickwrap"><input type="date" id="dp" value="${d}" data-c="dayPick" tabindex="-1" aria-hidden="true"></span>
+    <button class="icon-btn" data-a="dayNav" data-d="1" aria-label="Jour suivant">${chevR}</button>
+    ${isT ? '' : '<button class="btn" data-a="dayToday">Aujourd’hui</button>'}</div>`;
+  const dt = parse(d);
+  const head = `<header class="head" style="margin-bottom:10px"><div style="flex:1"></div><div class="head-r"><button class="icon-btn" data-a="settings" aria-label="Données et réglages">${IC.gear}</button></div></header>
+    <div class="dayhead"><div><h1 class="dayname">${cap(DOWL[dow(d)])}</h1><p class="daydate">${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}${isT ? ' · aujourd’hui' : ''}</p></div>${nav}</div>`;
+  let body;
+  if (!db.activities.length) body = `<div class="empty"><span>Tu n’as pas encore créé d’activité.</span><button class="btn pri" data-a="nav" data-p="plan">Commencer dans Planifier</button></div>`;
+  else if (!list.length) body = `<div class="empty"><span>Rien de prévu ce jour-là.</span><button class="btn pri" data-a="add" data-d="${d}">Ajouter une séance</button></div>`;
+  else body = `<p class="mute" style="margin-bottom:12px">${list.length} séance${list.length > 1 ? 's' : ''} prévue${list.length > 1 ? 's' : ''} · ${done} validée${done > 1 ? 's' : ''}</p>
+    <div class="scards">${list.map(s => sessionCard(s, 'today')).join('')}</div><button class="btn" data-a="add" data-d="${d}">＋ Ajouter une séance ce jour</button>`;
+  return head + body;
+}
+function validateModal(id) {
+  return {
+    build() {
+      const s = getS(id); if (!s) return '<p>Séance introuvable.</p>';
+      const a = act(s.actId), r = s.result || {};
+      const km = r.km != null ? r.km : (s.km != null ? s.km : '');
+      const exos = (r.exos && r.exos.length) ? r.exos : [{ n: '', p: '' }];
+      const names = [...new Set(db.sessions.flatMap(x => (x.result && x.result.exos) || []).map(e => e.n).filter(Boolean))];
+      let fields = '';
+      if (a.type === 'distance') fields += `<label class="f"><span>Distance parcourue (km)</span><input name="km" inputmode="decimal" autocomplete="off" placeholder="Ex. 10,5" value="${km === '' ? '' : esc(String(km).replace('.', ','))}"></label>`;
+      if (a.type === 'perf') fields += `<div class="fld"><span class="lbl">Exercices et performances</span><div id="exos">${exos.map(exoRow).join('')}</div><datalist id="exoNames">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist><button type="button" class="btn sm" data-a="addExo" style="justify-self:start">＋ Ajouter un exercice</button></div>`;
+      fields += `<div class="fld"><span class="lbl">Ressenti</span><div class="feel">${FEEL.map((f, i) => `<button type="button" data-a="feel" data-v="${i + 1}" aria-pressed="${r.feeling === i + 1}"><span>${f[0]}</span>${f[1]}</button>`).join('')}</div></div>`;
+      fields += `<label class="f"><span>${a.type === 'other' ? 'Détails de la séance' : 'Notes (facultatif)'}</span><textarea name="note" rows="3">${esc(r.note || '')}</textarea></label>`;
+      return `<div class="mh"><i class="dot" style="--c:${a.color};width:16px;height:16px"></i><div><h2>${s.done ? 'Modifier les données' : 'Valider la séance'}</h2><p>${esc(a.name)} · ${esc(longDate(s.date))}</p></div></div>
+        ${s.info ? `<details class="plan"><summary>Séance prévue</summary><p>${esc(s.info)}</p></details>` : ''}
+        <div class="stack" data-id="${id}">${fields}</div>
+        <div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button><button class="btn pri" data-a="confirmValidate" data-id="${id}">${s.done ? 'Enregistrer' : 'Valider'}</button></div>`;
+    }
+  };
+}
+function exoRow(e) {
+  return `<div class="exo"><input name="en" list="exoNames" placeholder="Exercice" autocomplete="off" value="${esc(e.n)}"><input name="ep" placeholder="Perf (ex. 4×8 à 60 kg)" autocomplete="off" value="${esc(e.p)}"><button type="button" class="icon-btn" data-a="rmExo" aria-label="Retirer l’exercice">×</button></div>`;
+}
+
+// =====================================================================
+// PAGE 3 – PLANIFICATION
+// =====================================================================
+function planForm(date, forceDefaults) {
+  const d = ui.pd, t = today();
+  const dt = date || t;
+  const days = forceDefaults ? [dow(dt)] : d.days;
+  const opts = `<option value="">Choisir une activité…</option>` + db.activities.map(a => `<option value="${a.id}" ${a.id === d.actId ? 'selected' : ''}>${esc(a.name)}</option>`).join('') + `<option value="__new">＋ Nouvelle activité…</option>`;
+  return `<div class="planform" data-mode="${forceDefaults ? 'single' : d.mode}" data-end="${d.endType}" data-km="${typeOf(d.actId) === 'distance' ? 1 : 0}">
+    <label class="f"><span>Activité</span><select name="act" data-c="planAct">${opts}</select></label>
+    <div class="fld"><span class="lbl">Fréquence</span><div class="seg"><button type="button" data-a="planMode" data-v="single" aria-pressed="${(forceDefaults ? 'single' : d.mode) === 'single'}">Un seul jour</button><button type="button" data-a="planMode" data-v="rec" aria-pressed="${(forceDefaults ? 'single' : d.mode) === 'rec'}">Récurrente</button></div></div>
+    <label class="f only-single"><span>Date</span><input type="date" name="date" value="${dt}"></label>
+    <div class="only-rec stack">
+      <div class="fld"><span class="lbl">Jours de la semaine</span><div class="days">${DOW.map((n, i) => `<button type="button" class="dbtn" data-a="planDay" data-i="${i}" aria-pressed="${days.includes(i)}">${n}</button>`).join('')}</div></div>
+      <div class="row2"><label class="f"><span>À partir du</span><input type="date" name="start" value="${dt}" data-c="planPrev"></label>
+        <div class="fld"><span class="lbl">Se termine</span><div class="seg"><button type="button" data-a="planEnd" data-v="weeks" aria-pressed="${d.endType === 'weeks'}">Après X semaines</button><button type="button" data-a="planEnd" data-v="date" aria-pressed="${d.endType === 'date'}">À une date</button></div></div></div>
+      <label class="f end-weeks"><span>Nombre de semaines</span><input name="weeks" type="number" min="1" max="104" value="${d.weeks}" data-c="planPrev"></label>
+      <label class="f end-date"><span>Date de fin</span><input type="date" name="end" value="${addDays(dt, 55)}" data-c="planPrev"></label>
+      <p class="preview" aria-live="polite"></p>
+    </div>
+    <label class="f only-km"><span>Distance prévue en km (facultatif)</span><input name="km" inputmode="decimal" autocomplete="off" placeholder="Ex. 10"></label>
+    <label class="f"><span>Déroulé de la séance (info)</span><textarea name="info" rows="4" placeholder="Ex. 15 min d’échauffement, 6 × 400 m allure 5 km, 10 min de retour au calme"></textarea></label>
+    <p class="err"></p>
+    <button class="btn pri block" data-a="addSessions">Ajouter au planning</button></div>`;
+}
+function updatePreview(root) {
+  const p = $('.preview', root); if (!p) return;
+  if (root.dataset.mode !== 'rec') { p.textContent = ''; return; }
+  const dates = recDates(root);
+  p.textContent = dates.length ? `→ ${dates.length} séance${dates.length > 1 ? 's' : ''}, du ${shortDate(dates[0])} au ${shortDate(dates[dates.length - 1])}` : '';
+}
+function recDates(root) {
+  const days = $$('.dbtn[aria-pressed="true"]', root).map(b => +b.dataset.i);
+  const start = val(root, 'start'); if (!start || !days.length) return [];
+  let end;
+  if (root.dataset.end === 'weeks') { const w = parseInt(val(root, 'weeks'), 10); if (!w || w < 1) return []; end = addDays(start, Math.min(w, 104) * 7 - 1); }
+  else { end = val(root, 'end'); if (!end || end < start) return []; }
+  return genDates(start, days, end);
+}
+function pagePlan() {
+  const acts = db.activities.map(a => {
+    const n = db.sessions.filter(s => s.actId === a.id).length;
+    return `<div class="lrow" style="--c:${a.color}"><i class="dot"></i><div class="grow"><b>${esc(a.name)}</b><small>${TYPES[a.type]} · ${n} séance${n > 1 ? 's' : ''}</small></div><button class="btn sm" data-a="editAct" data-id="${a.id}">Modifier</button></div>`;
+  }).join('');
+  const series = db.series.map(sr => {
+    const ss = db.sessions.filter(s => s.seriesId === sr.id).sort((a, b) => a.date < b.date ? -1 : 1);
+    if (!ss.length) return '';
+    const a = act(ss[0].actId), dn = sr.days.slice().sort().map(i => DOW[i]).join(' · ');
+    const nd = ss.filter(s => s.done).length;
+    return `<div class="lrow" style="--c:${a.color}"><i class="dot"></i><div class="grow"><b>${esc(a.name)} · ${dn}</b><small>${shortDate(ss[0].date)} → ${shortDate(ss[ss.length - 1].date)} · ${ss.length} séances (${nd} validée${nd > 1 ? 's' : ''})</small></div>
+      <button class="btn sm" data-a="editSeries" data-id="${sr.id}">Modifier</button><button class="btn sm ghost danger" data-a="delSeries" data-id="${sr.id}">Supprimer</button></div>`;
+  }).join('');
+  return pageHead('Planifier', 'Ajoute des séances à ton planning') +
+    `<div class="plangrid"><section class="card"><h2>Nouvelle séance</h2>${planForm()}</section>
+     <div class="sect-gap">
+       <section class="card"><h2>Mes activités</h2>${acts || '<p class="mute" style="margin-bottom:12px">Aucune activité. Crée la première pour commencer.</p>'}<button class="btn ${db.activities.length ? '' : 'pri'} block" data-a="newAct" style="margin-top:12px">＋ Nouvelle activité</button></section>
+       <section class="card"><h2>Séries récurrentes</h2>${series || '<p class="mute">Aucune série pour le moment. Choisis « Récurrente » pour en créer une.</p>'}</section>
+     </div></div>`;
+}
+function actModal(id) {
+  return {
+    build() {
+      const a = id ? getA(id) : null;
+      const color = a ? a.color : freeColor(), type = a ? a.type : 'distance';
+      return `<div class="mh"><h2>${a ? 'Modifier l’activité' : 'Nouvelle activité'}</h2></div>
+        <div class="stack" data-id="${id || ''}">
+          <label class="f"><span>Titre</span><input name="name" maxlength="40" autocomplete="off" placeholder="Ex. Course à pied" value="${esc(a ? a.name : '')}"></label>
+          <div class="fld"><span class="lbl">Couleur</span><div class="swatches">${PAL.map(c => `<button type="button" class="sw" style="--c:${c}" data-a="pickColor" data-col="${c}" aria-pressed="${c === color}" aria-label="Couleur ${c}"></button>`).join('')}<input type="color" name="pick" value="${color}" data-c="customColor" aria-label="Couleur personnalisée"></div><input type="hidden" name="color" value="${color}"></div>
+          <div class="fld"><span class="lbl">Type de données saisies à la validation</span>
+            ${Object.keys(TYPES).map(k => `<label class="opt"><input type="radio" name="type" value="${k}" ${k === type ? 'checked' : ''}><span><b>${TYPES[k]}</b><small>${TYPE_HELP[k]}</small></span></label>`).join('')}</div>
+          <p class="mute" style="font-size:13px">Le ressenti est demandé pour toutes les activités.</p>
+          <p class="err"></p></div>
+        <div class="mfoot">${a ? `<button class="btn ghost danger" data-a="delAct" data-id="${id}" style="margin-right:auto">Supprimer</button>` : ''}<button class="btn ghost" data-a="close">Annuler</button><button class="btn pri" data-a="saveAct" data-id="${id || ''}">${a ? 'Enregistrer' : 'Créer l’activité'}</button></div>`;
+    }
+  };
+}
+
+// ---------- Modification / suppression d’une séance ----------
+function targets(s, scope) {
+  if (!s.seriesId || scope === 'one') return [s];
+  return db.sessions.filter(x => x.seriesId === s.seriesId && !x.done && (scope === 'all' || x.date >= s.date));
+}
+function scopeOpts(name, current) {
+  return [['one', 'Cette séance uniquement'], ['next', 'Cette séance et les suivantes'], ['all', 'Toute la série']]
+    .map(([v, l]) => `<label class="opt"><input type="radio" name="${name}" value="${v}" ${v === current ? 'checked' : ''}><span><b>${l}</b></span></label>`).join('');
+}
+function editModal(id, fixed) {
+  return {
+    build() {
+      const s = getS(id); if (!s) return '<p>Séance introuvable.</p>';
+      const inSeries = !!s.seriesId, scope = fixed ? 'all' : 'one';
+      const opts = db.activities.map(a => `<option value="${a.id}" ${a.id === s.actId ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
+      const a = act(s.actId);
+      return `<div class="mh"><i class="dot" style="--c:${a.color};width:16px;height:16px"></i><div><h2>${fixed ? 'Modifier la série' : 'Modifier la séance'}</h2><p>${fixed ? 'Les séances déjà validées ne sont pas modifiées.' : esc(longDate(s.date))}</p></div></div>
+        <div class="stack planform ef" data-km="${a.type === 'distance' ? 1 : 0}" data-scope="${scope}" data-mode="single" data-end="weeks" data-id="${id}">
+          ${inSeries && !fixed ? `<div class="fld"><span class="lbl">Appliquer à</span>${scopeOpts('scope', 'one')}<small class="mute" id="scopeNote" hidden>Les séances déjà validées de la série ne sont pas modifiées.</small></div>` : ''}
+          <label class="f"><span>Activité</span><select name="act" data-c="editAct">${opts}</select></label>
+          ${fixed ? '' : `<label class="f only-one"><span>Date</span><input type="date" name="date" value="${s.date}"></label>`}
+          <label class="f only-km"><span>Distance prévue en km</span><input name="km" inputmode="decimal" autocomplete="off" value="${s.km != null ? esc(String(s.km).replace('.', ',')) : ''}"></label>
+          <label class="f"><span>Déroulé de la séance (info)</span><textarea name="info" rows="5">${esc(s.info || '')}</textarea></label>
+          <p class="err"></p></div>
+        <div class="mfoot"><button class="btn ghost danger" data-a="delS" data-id="${id}" data-fixed="${fixed ? 1 : 0}" style="margin-right:auto">Supprimer</button><button class="btn ghost" data-a="close">Annuler</button><button class="btn pri" data-a="saveEdit" data-id="${id}" data-fixed="${fixed ? 1 : 0}">Enregistrer</button></div>`;
+    }
+  };
+}
+function delModal(id, fixed) {
+  return {
+    build() {
+      const s = getS(id); if (!s) return '<p>Séance introuvable.</p>';
+      const a = act(s.actId);
+      if (!s.seriesId || fixed) {
+        const n = fixed ? targets(s, 'all').length : 1;
+        return `<div class="mh"><h2>${fixed ? 'Supprimer la série ?' : 'Supprimer cette séance ?'}</h2></div>
+          <p>${fixed ? `${n} séance${n > 1 ? 's' : ''} non validée${n > 1 ? 's' : ''} de « ${esc(a.name)} » ${n > 1 ? 'seront supprimées' : 'sera supprimée'}. Les séances déjà validées sont conservées.` : `« ${esc(a.name)} » du ${esc(longDate(s.date))} sera supprimée${s.done ? ', ainsi que les données saisies' : ''}.`}</p>
+          <div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button><button class="btn danger" data-a="confirmDel" data-id="${id}" data-fixed="${fixed ? 1 : 0}">Supprimer</button></div>`;
+      }
+      return `<div class="mh"><h2>Supprimer une séance récurrente</h2></div>
+        <div class="stack" data-id="${id}"><div class="fld">${scopeOpts('scope', 'one')}</div><p class="mute" style="font-size:13px">Les séances déjà validées de la série sont conservées.</p></div>
+        <div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button><button class="btn danger" data-a="confirmDel" data-id="${id}" data-fixed="0">Supprimer</button></div>`;
+    }
+  };
+}
+
+// =====================================================================
+// PAGE 4 – CALENDRIER
+// =====================================================================
+function chipHtml(s) {
+  const a = act(s.actId), st = status(s), mark = st === 'done' ? '✔ ' : st === 'missed' ? '✕ ' : '';
+  return `<span class="chip st-${st}" style="--c:${a.color};--ink:${ink(a.color)}" title="${esc(a.name)} – ${ST[st]}">${mark}${esc(a.name)}</span>`;
+}
+function pageCalendar() {
+  const { view, y, m } = ui.cal, idx = byDate(), td = today();
+  const label = view === 'month' ? `${cap(MONTHS[m])} ${y}` : String(y);
+  const bar = `<div class="cbar"><div class="seg"><button data-a="calView" data-v="month" aria-pressed="${view === 'month'}">Mensuel</button><button data-a="calView" data-v="year" aria-pressed="${view === 'year'}">Annuel</button></div>
+    <div class="pnav"><button class="icon-btn" data-a="calNav" data-d="-1" aria-label="Précédent">${chevL}</button><b>${label}</b><button class="icon-btn" data-a="calNav" data-d="1" aria-label="Suivant">${chevR}</button></div>
+    <button class="btn sm" data-a="calToday">Aujourd’hui</button></div>
+    <div class="legend"><span><span class="chip st-done" style="--c:#9aa7b8;--ink:#10131a;display:inline-block">✔ Réalisée</span></span><span><span class="chip st-todo" style="--c:#9aa7b8;display:inline-block">À venir</span></span><span><span class="chip st-missed" style="--c:#9aa7b8;display:inline-block">✕ Non réalisée</span></span></div>`;
+  let body = '';
+  if (view === 'month') {
+    const first = fmt(new Date(y, m, 1)), last = fmt(new Date(y, m + 1, 0));
+    const from = startOfWeek(first), to = addDays(startOfWeek(last), 6);
+    let cells = '';
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const list = idx.get(d) || [], out = d < first || d > last;
+      cells += `<button class="mday ${out ? 'out' : ''} ${d === td ? 'today' : ''}" data-a="openDay" data-d="${d}" aria-label="${esc(longDate(d))}"><span class="n">${parse(d).getDate()}</span>${list.slice(0, 3).map(chipHtml).join('')}${list.length > 3 ? `<span class="more">+${list.length - 3}</span>` : ''}</button>`;
+    }
+    body = `<div class="mgrid">${DOW.map(n => `<div class="wd">${n}</div>`).join('')}${cells}</div>`;
+  } else {
+    body = '<div class="ygrid">' + MONTHS.map((mn, mi) => {
+      const first = fmt(new Date(y, mi, 1)), last = new Date(y, mi + 1, 0).getDate(), off = dow(first);
+      let cells = DOW.map(n => `<div class="ydn">${n[0]}</div>`).join('') + '<span class="yd blank"></span>'.repeat(off);
+      for (let d = 1; d <= last; d++) {
+        const ds = `${y}-${pad(mi + 1)}-${pad(d)}`, list = idx.get(ds) || [];
+        cells += `<button class="yd ${list.length ? 'has' : ''} ${ds === td ? 'today' : ''}" data-a="openDay" data-d="${ds}" aria-label="${esc(longDate(ds))}">${list.length ? `<span class="segs">${list.map(s => `<i class="sg st-${status(s)}" style="--c:${act(s.actId).color}"></i>`).join('')}</span>` : ''}<b>${d}</b></button>`;
+      }
+      return `<div class="ymonth"><button data-a="openMonth" data-m="${mi}">${cap(mn)}</button><div class="ydays">${cells}</div></div>`;
+    }).join('') + '</div>';
+  }
+  return pageHead('Calendrier', 'Toutes tes séances, jour par jour') + bar + body;
+}
+function dayModal(d) {
+  return {
+    build() {
+      const list = byDate().get(d) || [];
+      return `<div class="mh"><div><h2>${esc(cap(longDate(d)))}</h2><p>${list.length ? `${list.length} séance${list.length > 1 ? 's' : ''} prévue${list.length > 1 ? 's' : ''}` : 'Aucune séance prévue'}</p></div></div>
+        <div class="scards" style="margin:0">${list.map(s => sessionCard(s, 'day')).join('')}</div>
+        <div class="mfoot"><button class="btn ghost" data-a="close">Fermer</button>${list.length ? `<button class="btn" data-a="gotoDay" data-d="${d}">Ouvrir dans « Activité du jour »</button>` : ''}<button class="btn pri" data-a="add" data-d="${d}">＋ Ajouter</button></div>`;
+    }
+  };
+}
+function addModal(d) {
+  return {
+    build() { return `<div class="mh"><h2>Ajouter une séance</h2></div>${planForm(d, true)}<div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button></div>`; },
+    mount(sheet) { $$('.planform', sheet).forEach(updatePreview); }
+  };
+}
+
+// =====================================================================
+// Réglages / sauvegarde
+// =====================================================================
+function settingsModal() {
+  return {
+    build() {
+      const n = db.sessions.length;
+      return `<div class="mh"><h2>Données et réglages</h2></div>
+        <div class="stack">
+          <p class="mute">Tes données sont enregistrées sur cet appareil (${n} séance${n > 1 ? 's' : ''}, ${db.activities.length} activité${db.activities.length > 1 ? 's' : ''}). Pour les transférer entre ton PC et ton téléphone, exporte un fichier de sauvegarde puis importe-le sur l’autre appareil.</p>
+          <div class="btns"><button class="btn" data-a="export">Exporter la sauvegarde</button><label class="btn" style="cursor:pointer">Importer une sauvegarde<input type="file" accept=".json,application/json" data-c="import" class="sr"></label></div>
+          ${deferredInstall ? '<button class="btn pri" data-a="install">Installer l’application</button>' : '<p class="mute" style="font-size:13px">Pour installer l’application : sur Android, menu ⋮ de Chrome puis « Installer l’application » ; sur Windows, icône d’installation dans la barre d’adresse d’Edge ou de Chrome.</p>'}
+          <button class="btn ghost danger" data-a="wipe" style="justify-self:start">Effacer toutes les données</button>
+        </div><div class="mfoot"><button class="btn" data-a="close">Fermer</button></div>`;
+    }
+  };
+}
+
+// =====================================================================
+// Actions (clics)
+// =====================================================================
+function showErr(root, msg) { const e = $('.err', root); if (e) e.textContent = msg; }
+function sheetOf(t) { return t.closest('.sheet') || document; }
+const A = {
+  nav: t => { ui.page = t.dataset.p; window.scrollTo(0, 0); render(); },
+  close: () => closeModal(1),
+  modalOk: () => { const m = modals[modals.length - 1]; if (m && m.onOk) m.onOk(); },
+  settings: () => openModal(settingsModal()),
+
+  // période (page globale)
+  per: t => { ui.per = { unit: t.dataset.u, anchor: today() }; render(); },
+  perNav: t => { ui.per.anchor = shiftAnchor(ui.per.unit, ui.per.anchor, +t.dataset.d); render(); },
+  perToday: () => { ui.per.anchor = today(); render(); },
+  chartOpt: t => { ui.chart[t.dataset.k] = !ui.chart[t.dataset.k]; render(); },
+
+  // jour
+  dayNav: t => { ui.day = addDays(ui.day, +t.dataset.d); render(); },
+  dayToday: () => { ui.day = today(); render(); },
+  showPicker: () => { const i = $('#dp'); if (!i) return; try { i.showPicker(); } catch (e) { i.focus(); i.click(); } },
+  gotoDay: t => { const n = modals.length; ui.day = t.dataset.d; ui.page = 'today'; closeModal(n); window.scrollTo(0, 0); render(); },
+
+  // validation
+  validate: t => openModal(validateModal(t.dataset.id)),
+  addExo: t => { const c = $('#exos', sheetOf(t)); c.insertAdjacentHTML('beforeend', exoRow({ n: '', p: '' })); c.lastElementChild.querySelector('input').focus(); },
+  rmExo: t => { const c = t.closest('#exos'); if (c.children.length > 1) t.closest('.exo').remove(); else $$('input', t.closest('.exo')).forEach(i => i.value = ''); },
+  feel: t => { const on = t.getAttribute('aria-pressed') === 'true'; $$('.feel button', t.parentElement).forEach(b => b.setAttribute('aria-pressed', 'false')); if (!on) t.setAttribute('aria-pressed', 'true'); },
+  confirmValidate: t => {
+    const s = getS(t.dataset.id), root = sheetOf(t); if (!s) return;
+    const type = typeOf(s.actId), res = {};
+    if (type === 'distance') res.km = parseNum(val(root, 'km'));
+    if (type === 'perf') res.exos = $$('.exo', root).map(r => ({ n: val(r, 'en').trim(), p: val(r, 'ep').trim() })).filter(e => e.n || e.p);
+    const f = $('.feel [aria-pressed="true"]', root); res.feeling = f ? +f.dataset.v : null;
+    res.note = val(root, 'note').trim();
+    const wasDone = s.done;
+    s.done = true; s.doneAt = Date.now(); s.result = res;
+    save(); closeModal(1); render(); toast(wasDone ? 'Données enregistrées' : 'Séance validée ✔');
+  },
+  unvalidate: t => { const s = getS(t.dataset.id); if (!s) return; s.done = false; save(); render(); toast('Validation annulée'); },
+
+  // ajout / planification
+  add: t => openModal(addModal(t.dataset.d)),
+  planMode: t => { const r = t.closest('.planform'); r.dataset.mode = t.dataset.v; ui.pd.mode = t.dataset.v; $$('[data-a="planMode"]', r).forEach(b => b.setAttribute('aria-pressed', String(b === t))); updatePreview(r); },
+  planEnd: t => { const r = t.closest('.planform'); r.dataset.end = t.dataset.v; ui.pd.endType = t.dataset.v; $$('[data-a="planEnd"]', r).forEach(b => b.setAttribute('aria-pressed', String(b === t))); updatePreview(r); },
+  planDay: t => { t.setAttribute('aria-pressed', String(t.getAttribute('aria-pressed') !== 'true')); updatePreview(t.closest('.planform')); },
+  addSessions: t => {
+    const r = t.closest('.planform'), actId = val(r, 'act');
+    if (!actId) return showErr(r, 'Choisis une activité.');
+    const type = typeOf(actId), km = type === 'distance' ? parseNum(val(r, 'km')) : null, info = val(r, 'info').trim();
+    let dates;
+    if (r.dataset.mode === 'single') { const d = val(r, 'date'); if (!d) return showErr(r, 'Choisis une date.'); dates = [d]; }
+    else {
+      if (!$$('.dbtn[aria-pressed="true"]', r).length) return showErr(r, 'Choisis au moins un jour de la semaine.');
+      if (!val(r, 'start')) return showErr(r, 'Choisis une date de début.');
+      dates = recDates(r);
+      if (!dates.length) return showErr(r, 'Aucune date ne correspond à ces réglages. Vérifie la fin de la série.');
+    }
+    let seriesId = null;
+    if (dates.length > 1 || r.dataset.mode === 'rec') {
+      seriesId = uid();
+      db.series.push({ id: seriesId, days: $$('.dbtn[aria-pressed="true"]', r).map(b => +b.dataset.i) });
+    }
+    dates.forEach(d => db.sessions.push({ id: uid(), date: d, actId, info, km, seriesId, done: false, result: null }));
+    ui.pd.actId = actId; ui.pd.days = $$('.dbtn[aria-pressed="true"]', r).map(b => +b.dataset.i); ui.pd.weeks = parseInt(val(r, 'weeks'), 10) || 8;
+    save();
+    if (t.closest('.sheet')) closeModal(1);
+    render(); toast(`${dates.length} séance${dates.length > 1 ? 's' : ''} ajoutée${dates.length > 1 ? 's' : ''}`);
+  },
+
+  // activités
+  newAct: () => openModal(actModal(null)),
+  editAct: t => openModal(actModal(t.dataset.id)),
+  pickColor: t => { const r = sheetOf(t); $$('.sw', r).forEach(b => b.setAttribute('aria-pressed', String(b === t))); r.querySelector('[name=color]').value = t.dataset.col; r.querySelector('[name=pick]').value = t.dataset.col; },
+  saveAct: t => {
+    const r = sheetOf(t), id = t.dataset.id, name = val(r, 'name').trim(), color = val(r, 'color');
+    const type = (r.querySelector('[name=type]:checked') || {}).value || 'other';
+    if (!name) return showErr(r, 'Donne un titre à l’activité.');
+    if (db.activities.some(a => a.id !== id && a.name.toLowerCase() === name.toLowerCase())) return showErr(r, 'Une activité porte déjà ce titre.');
+    if (id) { const a = getA(id); a.name = name; a.color = color; a.type = type; }
+    else { const a = { id: uid(), name, color, type }; db.activities.push(a); ui.pd.actId = a.id; }
+    save(); closeModal(1); render(); toast(id ? 'Activité modifiée' : 'Activité créée');
+  },
+  delAct: t => {
+    const id = t.dataset.id, a = getA(id), n = db.sessions.filter(s => s.actId === id).length;
+    confirmModal({
+      title: 'Supprimer cette activité ?', danger: true, ok: 'Supprimer',
+      text: n ? `« ${esc(a.name)} » et ses <b>${n} séance${n > 1 ? 's' : ''}</b> (planifiées ou validées) seront supprimées définitivement.` : `« ${esc(a.name)} » sera supprimée.`,
+      onOk: () => { db.sessions = db.sessions.filter(s => s.actId !== id); db.activities = db.activities.filter(x => x.id !== id); if (ui.pd.actId === id) ui.pd.actId = ''; cleanSeries(); save(); closeModal(2); render(); toast('Activité supprimée'); }
+    });
+  },
+
+  // modification / suppression de séances
+  editS: t => openModal(editModal(t.dataset.id, false)),
+  editSeries: t => {
+    const ss = db.sessions.filter(s => s.seriesId === t.dataset.id).sort((a, b) => a.date < b.date ? -1 : 1);
+    const first = ss.find(s => !s.done) || ss[0]; if (first) openModal(editModal(first.id, true));
+  },
+  saveEdit: t => {
+    const r = sheetOf(t), s = getS(t.dataset.id), fixed = t.dataset.fixed === '1'; if (!s) return;
+    const actId = val(r, 'act'), type = typeOf(actId);
+    const scope = fixed ? 'all' : ((r.querySelector('[name=scope]:checked') || {}).value || 'one');
+    const km = type === 'distance' ? parseNum(val(r, 'km')) : null, info = val(r, 'info').trim();
+    if (scope === 'one') { const d = val(r, 'date') || s.date; Object.assign(s, { actId, info, km, date: d }); }
+    else {
+      const list = targets(s, scope);
+      if (!list.length) return showErr(r, 'Aucune séance non validée à modifier.');
+      list.forEach(x => Object.assign(x, { actId, info, km }));
+    }
+    save(); closeModal(1); render(); toast('Modifications enregistrées');
+  },
+  delS: t => openModal(delModal(t.dataset.id, t.dataset.fixed === '1')),
+  confirmDel: t => {
+    const r = sheetOf(t), s = getS(t.dataset.id), fixed = t.dataset.fixed === '1'; if (!s) return;
+    const scope = fixed ? 'all' : ((r.querySelector('[name=scope]:checked') || {}).value || 'one');
+    if (scope === 'one') db.sessions = db.sessions.filter(x => x.id !== s.id);
+    else {
+      const gone = new Set(targets(s, scope).map(x => x.id));
+      db.sessions = db.sessions.filter(x => !gone.has(x.id));
+      if (scope === 'all') db.sessions.forEach(x => { if (x.seriesId === s.seriesId) x.seriesId = null; });
+    }
+    cleanSeries(); save(); closeModal(2); render(); toast('Supprimé');
+  },
+  delSeries: t => {
+    const id = t.dataset.id, ss = db.sessions.filter(s => s.seriesId === id), todo = ss.filter(s => !s.done).length, kept = ss.length - todo;
+    confirmModal({
+      title: 'Supprimer cette série ?', danger: true, ok: 'Supprimer',
+      text: `${todo} séance${todo > 1 ? 's' : ''} non validée${todo > 1 ? 's' : ''} ${todo > 1 ? 'seront supprimées' : 'sera supprimée'}.${kept ? ` Les ${kept} séance${kept > 1 ? 's' : ''} déjà validée${kept > 1 ? 's' : ''} ${kept > 1 ? 'sont conservées' : 'est conservée'}.` : ''}`,
+      onOk: () => { db.sessions = db.sessions.filter(s => !(s.seriesId === id && !s.done)); db.sessions.forEach(s => { if (s.seriesId === id) s.seriesId = null; }); cleanSeries(); save(); closeModal(1); render(); toast('Série supprimée'); }
+    });
+  },
+
+  // calendrier
+  calView: t => { ui.cal.view = t.dataset.v; render(); },
+  calNav: t => {
+    const d = +t.dataset.d;
+    if (ui.cal.view === 'year') ui.cal.y += d;
+    else { const n = new Date(ui.cal.y, ui.cal.m + d, 1); ui.cal.y = n.getFullYear(); ui.cal.m = n.getMonth(); }
+    render();
+  },
+  calToday: () => { const n = new Date(); ui.cal.y = n.getFullYear(); ui.cal.m = n.getMonth(); render(); },
+  openMonth: t => { ui.cal.view = 'month'; ui.cal.m = +t.dataset.m; render(); },
+  openDay: t => openModal(dayModal(t.dataset.d)),
+
+  // données
+  export: () => {
+    const blob = new Blob([JSON.stringify(db, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `cadence-sauvegarde-${today()}.json`;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('Sauvegarde exportée');
+  },
+  install: async () => { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; closeModal(1); },
+  wipe: () => confirmModal({
+    title: 'Effacer toutes les données ?', danger: true, ok: 'Tout effacer',
+    text: 'Toutes les activités et toutes les séances seront supprimées de cet appareil. Pense à exporter une sauvegarde avant.',
+    onOk: () => { db = { v: 1, activities: [], sessions: [], series: [] }; save(); closeModal(2); render(); toast('Données effacées'); }
+  })
+};
+// Changements de champs
+const C = {
+  dayPick: t => { if (t.value) { ui.day = t.value; render(); } },
+  planAct: t => {
+    const r = t.closest('.planform');
+    if (t.value === '__new') { t.value = ui.pd.actId || ''; openModal(actModal(null)); return; }
+    ui.pd.actId = t.value; r.dataset.km = typeOf(t.value) === 'distance' ? 1 : 0;
+  },
+  editAct: t => { t.closest('.planform').dataset.km = typeOf(t.value) === 'distance' ? 1 : 0; },
+  planPrev: t => updatePreview(t.closest('.planform')),
+  customColor: t => { const r = sheetOf(t); r.querySelector('[name=color]').value = t.value; $$('.sw', r).forEach(b => b.setAttribute('aria-pressed', 'false')); },
+  import: t => {
+    const f = t.files && t.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const o = JSON.parse(rd.result);
+        if (!o || !Array.isArray(o.activities) || !Array.isArray(o.sessions)) throw 0;
+        o.series = Array.isArray(o.series) ? o.series : [];
+        confirmModal({
+          title: 'Importer cette sauvegarde ?', danger: true, ok: 'Remplacer mes données',
+          text: `Le fichier contient ${o.activities.length} activité${o.activities.length > 1 ? 's' : ''} et ${o.sessions.length} séance${o.sessions.length > 1 ? 's' : ''}. Elles <b>remplaceront</b> les données actuelles de cet appareil.`,
+          onOk: () => { db = o; save(); closeModal(2); render(); toast('Sauvegarde importée'); }
+        });
+      } catch (e) { toast('Fichier invalide : ce n’est pas une sauvegarde Cadence.'); }
+    };
+    rd.readAsText(f); t.value = '';
+  }
+};
+document.addEventListener('click', e => {
+  const o = e.target.closest('.overlay');
+  if (o && e.target === o) { closeModal(1); return; }
+  const t = e.target.closest('[data-a]');
+  if (t && A[t.dataset.a]) { e.preventDefault(); A[t.dataset.a](t, e); }
+});
+['change', 'input'].forEach(ev => document.addEventListener(ev, e => {
+  const t = e.target.closest('[data-c]'); if (!t || !C[t.dataset.c]) return;
+  const k = t.dataset.c;
+  if (ev === 'input' && !['planPrev', 'customColor'].includes(k)) return;
+  if (ev === 'change' && k === 'planPrev') { C[k](t); return; }
+  C[k](t);
+}));
+// Note sur la portée des modifications
+document.addEventListener('change', e => {
+  if (e.target.name !== 'scope') return;
+  const r = e.target.closest('.planform');
+  if (r && r.classList.contains('ef')) { r.dataset.scope = e.target.value; const n = $('#scopeNote', r); if (n) n.hidden = e.target.value === 'one'; }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && modals.length) closeModal(1); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && ui.lastToday !== today()) render(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+
+// CSS dépendant de la portée (édition d’une séance)
+document.head.insertAdjacentHTML('beforeend', '<style>.ef:not([data-scope="one"]) .only-one{display:none}</style>');
+
+// ---------- Démarrage ----------
+(function init() {
+  const h = location.hash.replace('#', '');
+  if (PAGES[h]) ui.page = h;
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  render();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
