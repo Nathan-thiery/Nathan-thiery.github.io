@@ -1,0 +1,40 @@
+CADENCE – carnet de séances (application installable PC + Android)
+===================================================================
+
+Cadence est une PWA : une application web que Chrome / Edge installent comme une
+vraie application (icône, fenêtre dédiée, fonctionne hors connexion).
+Elle a besoin d'être servie en HTTPS (ou depuis localhost) pour pouvoir être installée.
+
+OPTION A – Test rapide sur ton PC (via WSL)
+-------------------------------------------
+1. Dans VSCode / WSL, ouvre un terminal dans ce dossier.
+2. Lance :  python3 -m http.server 8080
+3. Dans Edge ou Chrome (Windows), ouvre http://localhost:8080
+4. Clique sur l'icône « Installer » dans la barre d'adresse (ou menu ... > Applications >
+   Installer ce site en tant qu'application). Un raccourci apparaît sur le bureau.
+   (Cette option ne fonctionne que sur le PC : le téléphone n'accède pas à localhost.)
+
+OPTION B – PC + OnePlus 15 (recommandé) : hébergement gratuit en HTTPS
+-----------------------------------------------------------------------
+GitHub Pages :
+1. Crée un dépôt GitHub (peut être privé avec un compte Pro, sinon public : il ne
+   contient que le code, pas tes données).
+2. Envoie-y tout le contenu de ce dossier (index.html, sw.js, manifest.webmanifest, icons/).
+3. Settings > Pages > Source : branche main, dossier / (root). Attends 1 minute.
+4. Ouvre l'adresse https://TON-PSEUDO.github.io/NOM-DU-DEPOT/ :
+   - Windows (Edge/Chrome) : icône « Installer » dans la barre d'adresse.
+   - Android (Chrome) : menu ⋮ > « Installer l'application ».
+Netlify Drop ou Cloudflare Pages fonctionnent aussi (glisser-déposer le dossier).
+
+TES DONNÉES
+-----------
+- Elles sont enregistrées sur chaque appareil (stockage du navigateur / de l'application).
+- PC et téléphone ne se synchronisent pas automatiquement.
+- Pour les transférer : engrenage ⚙ > « Exporter la sauvegarde », puis « Importer une
+  sauvegarde » sur l'autre appareil. Fais un export de temps en temps, par sécurité.
+- Désinstaller l'application ou vider les données du site efface les données locales.
+
+MISES À JOUR
+------------
+Remplace index.html sur l'hébergement : l'application se met à jour au lancement suivant
+(si besoin, ferme et rouvre l'application une fois).
