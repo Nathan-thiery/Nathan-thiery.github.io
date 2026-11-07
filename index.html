@@ -214,9 +214,33 @@ input[type=color]{padding:2px;min-height:34px;width:44px;height:34px;border-radi
 .swatches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .sw{width:34px;height:34px;border-radius:50%;border:2px solid transparent;background:var(--c);padding:0}
 .sw[aria-pressed="true"]{border-color:var(--text);box-shadow:0 0 0 2px var(--s1) inset}
-.exo{display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;margin-bottom:8px}
-@media(max-width:480px){.exo{grid-template-columns:1fr 40px}.exo input[name=ep]{grid-column:1/2}.exo .icon-btn{grid-row:1/3;grid-column:2}}
-.exo .icon-btn{width:40px;height:42px}
+.exo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 40px;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.exo input[name=en]{grid-column:1/4}
+.exo .icon-btn{width:40px;height:42px;grid-column:4;grid-row:1}
+.exo:last-child{border-bottom:0}
+.exo-lbls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 40px;gap:8px;font-size:12px;color:var(--mute)}
+
+/* ---------- Compteurs / distribution / records ---------- */
+.counters{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.counter{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:2px;border-left:5px solid var(--c,var(--line))}
+.counter strong{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.counter strong small{font-size:14px;font-weight:600;color:var(--mute);margin-left:3px}
+.counter span{font-size:13px;color:var(--mute)}
+.distbox{position:relative;margin-top:6px}
+.distbox svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.distbox text{fill:var(--mute);font-size:11px}
+.prgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.pr{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:2px}
+.pr .pl{font-size:13px;font-weight:650;color:var(--mute)}
+.pr strong{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.pr small{color:var(--mute);font-size:13px}
+.pr.none strong{color:var(--mute);font-size:18px}
+.prrow{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.prrow:first-of-type{border-top:0}
+.prrow b{font-weight:650;flex:1;min-width:120px}
+.prrow strong{font-size:18px}
+.prrow small{color:var(--mute);width:100%}
+.hint{color:var(--mute);font-size:13px}
 .feel{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .feel button{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 2px;display:grid;gap:2px;justify-items:center;font-size:11px;color:var(--mute)}
 .feel button span{font-size:24px;line-height:1.1}
@@ -266,11 +290,26 @@ const shortDate = s => { const d = parse(s); return `${d.getDate()} ${MS[d.getMo
 const nf = n => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 const parseNum = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) || n < 0 ? null : n; };
 const val = (root, n) => { const e = root.querySelector(`[name="${n}"]`); return e ? e.value : ''; };
+const parseInt0 = v => { const s = String(v).trim(); if (!/^\d+$/.test(s)) return null; const n = parseInt(s, 10); return n > 0 ? n : null; };
+// Durées : « 1:23:45 », « 45:10 » (min:s) ou un nombre seul = minutes. Résultat en secondes.
+function parseDur(v) {
+  const s = String(v).trim().replace(',', '.'); if (!s) return null;
+  const p = s.split(':');
+  if (p.length > 3 || p.some(x => x.trim() === '' || isNaN(Number(x)) || Number(x) < 0)) return NaN;
+  if (p.length === 1) return Math.round(Number(p[0]) * 60) || null;
+  const n = p.map(Number), sec = p.length === 3 ? n[0] * 3600 + n[1] * 60 + n[2] : n[0] * 60 + n[1];
+  return sec > 0 ? Math.round(sec) : null;
+}
+const fmtClock = t => { t = Math.round(t); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`; };
+const fmtDur = t => { t = Math.round(t / 60); const h = Math.floor(t / 60), m = t % 60; return h ? `${h} h ${pad(m)}` : `${m} min`; };
+const fmtPace = (km, t) => { if (!km || !t) return ''; const p = Math.round(t / km); return `${Math.floor(p / 60)}:${pad(p % 60)}`; };
+const exoKg = e => (e.k != null && e.r != null) ? (e.s || 1) * e.r * e.k : 0;
 function ink(hex) { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#10131a' : '#ffffff'; }
 
 // ---------- Constantes ----------
-const TYPES = { distance: 'Km / distance', perf: 'Perf / exos', other: 'Autre' };
-const TYPE_HELP = { distance: 'Saisie des kilomètres à la validation', perf: 'Liste d’exercices avec leur performance', other: 'Notes libres à la validation' };
+const TYPES = { distance: 'Km / distance', perf: 'Perf / exos', qty: 'Quantité', other: 'Autre' };
+const TYPE_HELP = { distance: 'Km, temps réalisé, dénivelé + et − à la validation', perf: 'Exercices : nom, séries, répétitions et charge (kg)', qty: 'Un nombre entier positif (ex. 150 sauts à la corde)', other: 'Notes libres à la validation' };
+const PR_DIST = [5, 10, 20, 30, 40];
 const FEEL = [['😫', 'Très dur'], ['😕', 'Difficile'], ['😐', 'Correct'], ['🙂', 'Bien'], ['😄', 'Excellent']];
 const ST = { done: 'Réalisée', missed: 'Non réalisée', todo: 'À faire' };
 const PAL = ['#ff7b72', '#ffa657', '#f2cc60', '#7ee787', '#3fb9a8', '#56c7f5', '#6e9bff', '#a98bff', '#e07bd9', '#ff8fb1', '#c9a27e', '#9aa7b8'];
@@ -307,7 +346,7 @@ function genDates(start, days, endStr) {
 }
 
 // ---------- État de l’interface ----------
-const PAGES = { global: 'Global', today: 'Activité du jour', plan: 'Planifier', calendar: 'Calendrier' };
+const PAGES = { global: 'Global', today: 'Activité du jour', plan: 'Planifier', calendar: 'Calendrier', pr: 'PR' };
 const t0 = new Date();
 const ui = {
   page: 'global',
@@ -326,6 +365,7 @@ const IC = {
   today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg>',
   plan: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg>',
   calendar: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  pr: '<svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8M10 17h4"/></svg>',
   gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
 };
 const chevL = '<svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>';
@@ -381,7 +421,7 @@ function pageHead(title, sub = '', right = '') {
 function render() {
   if (ui.lastToday !== today()) { if (ui.day === ui.lastToday) ui.day = today(); ui.lastToday = today(); }
   renderNav();
-  $('#view').innerHTML = ({ global: pageGlobal, today: pageToday, plan: pagePlan, calendar: pageCalendar })[ui.page]();
+  $('#view').innerHTML = ({ global: pageGlobal, today: pageToday, plan: pagePlan, calendar: pageCalendar, pr: pagePR })[ui.page]();
   document.title = `${PAGES[ui.page]} – Cadence`;
   afterRender();
   renderModals();
@@ -389,17 +429,31 @@ function render() {
 function afterRender() {
   $$('.planform').forEach(updatePreview);
   bindChart();
+  bindDist();
 }
 
 // ---------- Blocs partagés ----------
 function resultHtml(s) {
   const r = s.result; if (!r) return '';
   const a = act(s.actId), parts = [];
-  if (a.type === 'distance' && r.km != null) parts.push(`<div class="rk"><b>${nf(r.km)}</b> km</div>`);
-  if (a.type === 'perf' && r.exos && r.exos.length) parts.push(`<ul class="rx">${r.exos.map(e => `<li><span>${esc(e.n)}</span><em>${esc(e.p)}</em></li>`).join('')}</ul>`);
+  if (a.type === 'distance') {
+    if (r.km != null) parts.push(`<div class="rk"><b>${nf(r.km)}</b> km${r.time ? ` · <b style="font-size:20px">${fmtClock(r.time)}</b>${r.km ? ` · ${fmtPace(r.km, r.time)} /km` : ''}` : ''}</div>`);
+    else if (r.time) parts.push(`<div class="rk"><b>${fmtClock(r.time)}</b></div>`);
+    if (r.dplus != null || r.dminus != null) parts.push(`<div class="rk">${r.dplus != null ? `D+ <b style="font-size:18px">${nf(r.dplus)}</b> m` : ''}${r.dplus != null && r.dminus != null ? ' · ' : ''}${r.dminus != null ? `D− <b style="font-size:18px">${nf(r.dminus)}</b> m` : ''}</div>`);
+  }
+  if (a.type === 'qty' && r.qty != null) parts.push(`<div class="rk"><b>${nf(r.qty)}</b></div>`);
+  if (a.type === 'perf' && r.exos && r.exos.length) parts.push(`<ul class="rx">${r.exos.map(e => `<li><span>${esc(e.n)}</span><em>${esc(exoText(e))}</em></li>`).join('')}</ul>`);
   if (r.feeling) parts.push(`<div>${FEEL[r.feeling - 1][0]} ${FEEL[r.feeling - 1][1]}</div>`);
   if (r.note) parts.push(`<p class="rn">${esc(r.note)}</p>`);
   return parts.length ? `<div class="res">${parts.join('')}</div>` : '';
+}
+function exoText(e) {
+  const bits = [];
+  if (e.r != null) bits.push(e.s ? `${e.s} × ${e.r}` : `${e.r} rép.`);
+  else if (e.s) bits.push(`${e.s} séries`);
+  if (e.k != null) bits.push(`${nf(e.k)} kg`);
+  if (e.p) bits.push(e.p);
+  return bits.join(' · ');
 }
 function sessionCard(s, ctx) {
   const a = act(s.actId), st = status(s);
@@ -523,14 +577,79 @@ function bindChart() {
   svg.addEventListener('pointerdown', move);
   svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { tip.hidden = true; cur.style.display = 'none'; } });
 }
+let distCtx = null;
+function totals(ss) {
+  const t = { km: 0, time: 0, dplus: 0, kg: 0, qty: new Map() };
+  ss.filter(s => s.done && s.result).forEach(s => {
+    const r = s.result, ty = typeOf(s.actId);
+    if (ty === 'distance') { t.km += r.km || 0; t.time += r.time || 0; t.dplus += r.dplus || 0; }
+    if (ty === 'perf') (r.exos || []).forEach(e => { t.kg += exoKg(e); });
+    if (ty === 'qty' && r.qty) t.qty.set(s.actId, (t.qty.get(s.actId) || 0) + r.qty);
+  });
+  return t;
+}
+function countersHtml(t) {
+  const has = ty => db.activities.some(a => a.type === ty);
+  const c = [];
+  if (has('distance')) {
+    c.push(['', nf(Math.round(t.km * 100) / 100), 'km', 'parcourus']);
+    c.push(['', t.time ? fmtDur(t.time) : '0 min', '', 'de sport chronométré']);
+    c.push(['', nf(Math.round(t.dplus)), 'm', 'de dénivelé +']);
+  }
+  if (has('perf')) c.push(['', nf(Math.round(t.kg)), 'kg', 'soulevés au total']);
+  db.activities.filter(a => a.type === 'qty').forEach(a => c.push([a.color, nf(t.qty.get(a.id) || 0), '', esc(a.name)]));
+  return c.length ? `<div class="counters">${c.map(([col, v, u, l]) => `<div class="counter" ${col ? `style="--c:${col}"` : ''}><strong>${v}${u ? `<small>${u}</small>` : ''}</strong><span>${l}</span></div>`).join('')}</div>` : '';
+}
+function buildDist(rs, re, unit, ss) {
+  const done = ss.filter(s => s.done);
+  if (!done.length) { distCtx = null; return `<p class="mute">Aucune séance validée sur cette période.</p>`; }
+  const buckets = makeBuckets(rs, re, unit), n = buckets.length;
+  const acts = db.activities.filter(a => done.some(s => s.actId === a.id));
+  const data = buckets.map(b => ({ label: b.label, items: acts.map(a => ({ name: a.name, color: a.color, v: done.filter(s => s.actId === a.id && s.date >= b.s && s.date <= b.e).length })).filter(i => i.v) }));
+  const mx = Math.max(1, ...data.map(d => d.items.reduce((t, i) => t + i.v, 0)));
+  const stepY = Math.ceil(mx / 4), ymax = stepY * 4;
+  const W = 720, H = 240, ml = 34, mr = 10, mt = 10, mb = 28, iw = W - ml - mr, ih = H - mt - mb;
+  const slot = iw / n, bw = Math.max(2, Math.min(slot * 0.7, 30));
+  const y = v => mt + ih - v / ymax * ih;
+  let g = '';
+  for (let i = 0; i <= 4; i++) { const yy = y(stepY * i); g += `<line x1="${ml}" x2="${W - mr}" y1="${yy}" y2="${yy}" stroke="#2c3446"/><text x="${ml - 6}" y="${yy + 4}" text-anchor="end">${stepY * i}</text>`; }
+  const lab = Math.max(1, Math.ceil(n / 8));
+  data.forEach((d, i) => {
+    const cx = ml + slot * (i + .5);
+    let acc = 0;
+    d.items.forEach(it => { const h = it.v / ymax * ih; g += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${(y(acc + it.v)).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${it.color}" stroke="#181d27" stroke-width=".8" rx="2"/>`; acc += it.v; });
+    if (i % lab === 0) g += `<text x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(buckets[i].label)}</text>`;
+  });
+  g += `<rect class="hov" x="0" y="${mt}" width="0" height="${ih}" fill="#ffffff" opacity=".06" style="display:none"/>`;
+  distCtx = { W, ml, iw, n, slot, data };
+  const lg = acts.map(a => `<span><i class="dot" style="--c:${a.color}"></i>${esc(a.name)}</span>`).join('');
+  return `<div class="distbox"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Séances réalisées par ${unit === 'week' ? 'jour' : 'semaine'}">${g}</svg><div class="tip" hidden></div></div><div class="lgline">${lg}</div>`;
+}
+function bindDist() {
+  const box = $('.distbox'); if (!box || !distCtx) return;
+  const svg = $('svg', box), tip = $('.tip', box), hov = $('.hov', svg), c = distCtx;
+  const move = e => {
+    const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) / r.width * c.W;
+    const i = Math.max(0, Math.min(c.n - 1, Math.floor((vx - c.ml) / c.slot)));
+    const d = c.data[i];
+    hov.setAttribute('x', c.ml + c.slot * i); hov.setAttribute('width', c.slot); hov.style.display = '';
+    tip.hidden = false;
+    tip.innerHTML = `<b>${esc(d.label)}</b>` + (d.items.length ? d.items.map(it => `<div><i class="dot" style="--c:${it.color}"></i>${esc(it.name)} : ${it.v}</div>`).join('') : '<div>Aucune séance</div>');
+    const left = (c.ml + c.slot * (i + .5)) / c.W * r.width;
+    tip.style.left = Math.min(Math.max(left, 90), r.width - 90) + 'px';
+  };
+  svg.addEventListener('pointermove', move);
+  svg.addEventListener('pointerdown', move);
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { tip.hidden = true; hov.style.display = 'none'; } });
+}
 function pageGlobal() {
   const { unit, anchor } = ui.per;
   const [rs, re] = periodRange(unit, anchor);
   const ss = db.sessions.filter(s => s.date >= rs && s.date <= re);
   const cnt = { done: 0, todo: 0, missed: 0 };
   ss.forEach(s => cnt[status(s)]++);
-  const km = ss.filter(s => s.done && typeOf(s.actId) === 'distance').reduce((t, s) => t + ((s.result && s.result.km) || 0), 0);
   const hasKm = db.activities.some(a => a.type === 'distance');
+  const dist = buildDist(rs, re, unit, ss);
 
   const units = [['week', 'Semaine'], ['month', 'Mois'], ['quarter', 'Trimestre'], ['year', 'Année'], ['all', 'Tout']];
   const isCur = unit === 'all' || periodRange(unit, anchor)[0] === periodRange(unit, today())[0];
@@ -554,10 +673,12 @@ function pageGlobal() {
   if (!hasKm || !chart.includes('chartbox')) chartCtx = null;
 
   return pageHead('Vue globale', 'Où en sont tes séances') + bar +
-    `<div class="stats"><div><strong>${cnt.done}</strong><span>réalisées</span></div><div><strong>${cnt.todo}</strong><span>à venir</span></div><div><strong>${cnt.missed}</strong><span>non réalisées</span></div>${hasKm ? `<div><strong>${nf(km)}</strong><span>km parcourus</span></div>` : ''}</div>
+    `<div class="stats"><div><strong>${cnt.done}</strong><span>réalisées</span></div><div><strong>${cnt.todo}</strong><span>à venir</span></div><div><strong>${cnt.missed}</strong><span>non réalisées</span></div></div>
+    ${countersHtml(totals(ss))}
     <div class="plangrid" style="grid-template-columns:minmax(0,1fr)"><div class="sect-gap">
       <section class="card"><h2>Séances par activité</h2>
         <div class="legend"><span><i class="lg-done"></i>Réalisées</span><span><i class="lg-todo"></i>À venir</span><span><i class="lg-miss"></i>Non réalisées</span></div>${list}</section>
+      <section class="card"><h2>Distribution des séances réalisées</h2>${dist}</section>
       <section class="card"><div class="chart-h"><h2>Kilomètres par ${unit === 'week' ? 'jour' : 'semaine'}</h2>
         <div class="btns"><button class="chipbtn" data-a="chartOpt" data-k="cumul" aria-pressed="${ui.chart.cumul}">Cumul</button><button class="chipbtn" data-a="chartOpt" data-k="planned" aria-pressed="${ui.chart.planned}">Afficher le prévu</button></div></div>${chart}</section>
     </div></div>`;
@@ -591,13 +712,18 @@ function validateModal(id) {
       const s = getS(id); if (!s) return '<p>Séance introuvable.</p>';
       const a = act(s.actId), r = s.result || {};
       const km = r.km != null ? r.km : (s.km != null ? s.km : '');
-      const exos = (r.exos && r.exos.length) ? r.exos : [{ n: '', p: '' }];
+      const exos = (r.exos && r.exos.length) ? r.exos : [{ n: '' }];
       const names = [...new Set(db.sessions.flatMap(x => (x.result && x.result.exos) || []).map(e => e.n).filter(Boolean))];
+      const cm = v => v == null ? '' : esc(String(v).replace('.', ','));
       let fields = '';
-      if (a.type === 'distance') fields += `<label class="f"><span>Distance parcourue (km)</span><input name="km" inputmode="decimal" autocomplete="off" placeholder="Ex. 10,5" value="${km === '' ? '' : esc(String(km).replace('.', ','))}"></label>`;
+      if (a.type === 'distance') fields += `<div class="row2"><label class="f"><span>Nombre de km</span><input name="km" inputmode="decimal" autocomplete="off" placeholder="Ex. 10,5" value="${cm(km)}"></label>
+        <label class="f"><span>Temps réalisé</span><input name="time" inputmode="numeric" autocomplete="off" placeholder="h:mm:ss ou mm:ss" value="${r.time ? fmtClock(r.time) : ''}"></label>
+        <label class="f"><span>Dénivelé + (m)</span><input name="dplus" inputmode="decimal" autocomplete="off" placeholder="Ex. 250" value="${cm(r.dplus)}"></label>
+        <label class="f"><span>Dénivelé − (m)</span><input name="dminus" inputmode="decimal" autocomplete="off" placeholder="Ex. 240" value="${cm(r.dminus)}"></label></div>`;
+      if (a.type === 'qty') fields += `<label class="f"><span>Quantité</span><input name="qty" inputmode="numeric" autocomplete="off" placeholder="Ex. 150" value="${r.qty != null ? r.qty : ''}"></label>`;
       if (a.type === 'perf') fields += `<div class="fld"><span class="lbl">Exercices et performances</span><div id="exos">${exos.map(exoRow).join('')}</div><datalist id="exoNames">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist><button type="button" class="btn sm" data-a="addExo" style="justify-self:start">＋ Ajouter un exercice</button></div>`;
       fields += `<div class="fld"><span class="lbl">Ressenti</span><div class="feel">${FEEL.map((f, i) => `<button type="button" data-a="feel" data-v="${i + 1}" aria-pressed="${r.feeling === i + 1}"><span>${f[0]}</span>${f[1]}</button>`).join('')}</div></div>`;
-      fields += `<label class="f"><span>${a.type === 'other' ? 'Détails de la séance' : 'Notes (facultatif)'}</span><textarea name="note" rows="3">${esc(r.note || '')}</textarea></label>`;
+      fields += `<label class="f"><span>${a.type === 'other' ? 'Détails de la séance' : 'Notes (facultatif)'}</span><textarea name="note" rows="3">${esc(r.note || '')}</textarea></label><p class="err"></p>`;
       return `<div class="mh"><i class="dot" style="--c:${a.color};width:16px;height:16px"></i><div><h2>${s.done ? 'Modifier les données' : 'Valider la séance'}</h2><p>${esc(a.name)} · ${esc(longDate(s.date))}</p></div></div>
         ${s.info ? `<details class="plan"><summary>Séance prévue</summary><p>${esc(s.info)}</p></details>` : ''}
         <div class="stack" data-id="${id}">${fields}</div>
@@ -606,7 +732,13 @@ function validateModal(id) {
   };
 }
 function exoRow(e) {
-  return `<div class="exo"><input name="en" list="exoNames" placeholder="Exercice" autocomplete="off" value="${esc(e.n)}"><input name="ep" placeholder="Perf (ex. 4×8 à 60 kg)" autocomplete="off" value="${esc(e.p)}"><button type="button" class="icon-btn" data-a="rmExo" aria-label="Retirer l’exercice">×</button></div>`;
+  const c = v => v == null ? '' : esc(String(v).replace('.', ','));
+  return `<div class="exo"><input name="en" list="exoNames" placeholder="Nom de l’exercice" aria-label="Nom de l’exercice" autocomplete="off" value="${esc(e.n || '')}">
+    <button type="button" class="icon-btn" data-a="rmExo" aria-label="Retirer l’exercice">×</button>
+    <input name="es" inputmode="numeric" placeholder="Séries" aria-label="Nombre de séries" autocomplete="off" value="${c(e.s)}">
+    <input name="er" inputmode="numeric" placeholder="Répétitions" aria-label="Nombre de répétitions" autocomplete="off" value="${c(e.r)}">
+    <input name="ek" inputmode="decimal" placeholder="Charge (kg)" aria-label="Charge en kg" autocomplete="off" value="${c(e.k)}">
+    <input type="hidden" name="ep" value="${esc(e.p || '')}"></div>`;
 }
 
 // =====================================================================
@@ -787,6 +919,121 @@ function addModal(d) {
 }
 
 // =====================================================================
+// PAGE 5 – RECORDS PERSONNELS (PR)
+// Calculés à partir de toutes les séances validées : ils se mettent à jour seuls.
+// =====================================================================
+function prCard(label, main, sub, day) {
+  const tag = day ? 'button' : 'div';
+  return `<${tag} class="pr ${main ? '' : 'none'}" ${day ? `data-a="openDay" data-d="${day}" style="text-align:left;color:inherit;font:inherit;cursor:pointer"` : ''}><span class="pl">${label}</span><strong>${main || '—'}</strong><small>${sub || 'Pas encore de record'}</small></${tag}>`;
+}
+function pagePR() {
+  const done = db.sessions.filter(s => s.done && s.result);
+  const blocks = [];
+  db.activities.filter(a => a.type === 'distance').forEach(a => {
+    const mine = done.filter(s => s.actId === a.id);
+    const timed = mine.filter(s => s.result.km && s.result.time);
+    const cards = PR_DIST.map(T => {
+      let best = null;
+      timed.forEach(s => { const km = s.result.km; if (km >= T && km <= T * 1.1) { const t = s.result.time * T / km; if (!best || t < best.t) best = { t, s, km }; } });
+      return best ? prCard(`${T} km`, (best.km === T ? '' : '≈ ') + fmtClock(best.t), `${fmtPace(T, best.t)} /km · ${shortDate(best.s.date)} ${parse(best.s.date).getFullYear()}${best.km === T ? '' : ` (sortie de ${nf(best.km)} km)`}`, best.s.date) : prCard(`${T} km`, '', '');
+    });
+    let dp = null;
+    mine.forEach(s => { if (s.result.dplus > 0 && (!dp || s.result.dplus > dp.result.dplus)) dp = s; });
+    cards.push(dp ? prCard('D+ max sur une séance', `${nf(dp.result.dplus)} m`, `${nf(dp.result.km || 0)} km · ${shortDate(dp.date)} ${parse(dp.date).getFullYear()}`, dp.date) : prCard('D+ max sur une séance', '', ''));
+    blocks.push(`<section class="card" style="--c:${a.color}"><h2 style="display:flex;align-items:center;gap:10px"><i class="dot"></i>${esc(a.name)}</h2><div class="prgrid">${cards.join('')}</div></section>`);
+  });
+  // Meilleure charge par exercice (tous exercices confondus)
+  const ex = new Map();
+  done.filter(s => typeOf(s.actId) === 'perf').forEach(s => (s.result.exos || []).forEach(e => {
+    if (!e.n || !(e.k > 0)) return;
+    const key = e.n.trim().toLowerCase(), cur = ex.get(key);
+    if (!cur || e.k > cur.e.k || (e.k === cur.e.k && (e.r || 0) > (cur.e.r || 0))) ex.set(key, { e, s });
+  }));
+  if (db.activities.some(a => a.type === 'perf')) {
+    const rows = [...ex.values()].sort((a, b) => a.e.n.localeCompare(b.e.n, 'fr'));
+    blocks.push(`<section class="card"><h2>Meilleure charge par exercice</h2>${rows.length ? rows.map(({ e, s }) => `<div class="prrow" style="--c:${act(s.actId).color}"><b>${esc(e.n)}</b><strong>${nf(e.k)} kg</strong><small>${e.r != null ? (e.s ? `${e.s} × ${e.r} · ` : `${e.r} rép. · `) : ''}${shortDate(s.date)} ${parse(s.date).getFullYear()} · ${esc(act(s.actId).name)}</small></div>`).join('') : '<p class="mute">Aucune charge enregistrée pour le moment. Renseigne le nom et la charge d’un exercice en validant une séance « Perf / exos ».</p>'}</section>`);
+  }
+  const body = blocks.length ? `<div class="sect-gap">${blocks.join('')}<p class="hint">Un record de course vient d’une sortie dont la distance est comprise entre le palier et +10 % (ex. 10 à 11 km pour le 10 km) ; le temps est ramené au palier au prorata (≈). Les records sont recalculés à partir des séances validées.</p></div>`
+    : `<div class="empty"><span>Crée une activité « Km / distance » ou « Perf / exos » et valide des séances pour voir tes records.</span><button class="btn pri" data-a="nav" data-p="plan">Aller à la planification</button></div>`;
+  return pageHead('Records personnels', 'Tes meilleures performances à ce jour') + body;
+}
+
+// =====================================================================
+// Import Strava (activities.csv de l’export de données Strava)
+// =====================================================================
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.slice(0, text.indexOf('\n') >= 0 ? text.indexOf('\n') : text.length);
+  const sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === sep) { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(x => x !== '')) rows.push(row); row = []; }
+    else cur += c;
+  }
+  row.push(cur); if (row.some(x => x !== '')) rows.push(row);
+  return rows;
+}
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[’`]/g, "'").trim();
+const MON = { jan: 0, janv: 0, feb: 1, fev: 1, febr: 1, mar: 2, mars: 2, apr: 3, avr: 3, may: 4, mai: 4, jun: 5, juin: 5, jul: 6, juil: 6, juillet: 6, aug: 7, aou: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 };
+function stravaDate(v) {
+  const s = norm(v), iso = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const year = (s.match(/\b(\d{4})\b/) || [])[1];
+  const word = (s.match(/[a-z]+/g) || []).map(w => w.replace(/\.$/, '')).find(w => MON[w] != null || MON[w.slice(0, 3)] != null);
+  const day = (s.match(/\b(\d{1,2})\b/) || [])[1];
+  if (!year || !word || !day) return null;
+  const m = MON[word] != null ? MON[word] : MON[word.slice(0, 3)];
+  return `${year}-${pad(m + 1)}-${pad(+day)}`;
+}
+const sNum = v => { const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? null : n; };
+function parseStrava(text) {
+  const rows = parseCSV(text); if (rows.length < 2) throw new Error('vide');
+  const H = rows[0].map(norm), all = re => H.map((h, i) => re.test(h) ? i : -1).filter(i => i >= 0);
+  const one = re => all(re)[0];
+  const iDate = one(/^(activity date|date de l'activite)$/), iType = one(/^(activity type|type d'activite)$/), iName = one(/^(activity name|nom de l'activite)$/);
+  const iId = one(/^(activity id|id de l'activite|identifiant de l'activite)$/);
+  const iDist = all(/^distance$/), iMov = all(/^(moving time|duree de deplacement|temps de deplacement|temps en mouvement)$/), iEla = all(/^(elapsed time|temps ecoule|duree ecoulee)$/);
+  const iUp = all(/^(elevation gain|denivele positif)$/), iDn = all(/^(elevation loss|denivele negatif)$/);
+  if (iDate == null || iType == null || !iDist.length) throw new Error('colonnes');
+  const pick = (r, idx) => { for (const i of idx) { const n = sNum(r[i] ?? ''); if (n != null) return n; } return null; };
+  const out = []; let total = 0;
+  rows.slice(1).forEach(r => {
+    total++;
+    const t = norm(r[iType] || '');
+    if (!/\brun\b|course|trail|running/.test(t) || /velo|bike|ride|cycl/.test(t)) return;
+    const date = stravaDate(r[iDate] || ''); if (!date) return;
+    let km = null;
+    for (let k = iDist.length - 1; k >= 0; k--) { const n = sNum(r[iDist[k]] ?? ''); if (n != null) { km = (iDist.length > 1 && k > 0) || n > 1000 ? n / 1000 : n; break; } }
+    if (!km || km <= 0) return;
+    const time = pick(r, iMov) || pick(r, iEla);
+    out.push({ key: iId != null && r[iId] ? 'strava:' + r[iId].trim() : `strava:${date}:${km.toFixed(3)}`, date, name: iName != null ? (r[iName] || '').trim() : '', km: Math.round(km * 1000) / 1000, time: time ? Math.round(time) : null, dplus: pick(r, iUp), dminus: pick(r, iDn) });
+  });
+  return { runs: out, total };
+}
+let stravaPending = null;
+function stravaModal() {
+  return {
+    build() {
+      const p = stravaPending, have = new Set(db.sessions.map(s => s.strava).filter(Boolean));
+      const fresh = p.runs.filter(r => !have.has(r.key));
+      const dActs = db.activities.filter(a => a.type === 'distance');
+      p.fresh = fresh;
+      const opts = dActs.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('') + `<option value="__new" ${dActs.length ? '' : 'selected'}>＋ Créer « Course à pied »</option>`;
+      return `<div class="mh"><h2>Import Strava</h2></div>
+        <div class="stack"><p>${p.runs.length} course${p.runs.length > 1 ? 's' : ''} à pied trouvée${p.runs.length > 1 ? 's' : ''} sur ${p.total} activité${p.total > 1 ? 's' : ''} du fichier. <b>${fresh.length}</b> nouvelle${fresh.length > 1 ? 's' : ''}${p.runs.length - fresh.length ? `, ${p.runs.length - fresh.length} déjà importée${p.runs.length - fresh.length > 1 ? 's' : ''} (ignorée${p.runs.length - fresh.length > 1 ? 's' : ''})` : ''}.</p>
+        ${fresh.length ? `<label class="f"><span>Ajouter ces sorties à l’activité</span><select name="target">${opts}</select></label>
+        <p class="hint">Chaque sortie devient une séance déjà validée avec ses km, son temps et son dénivelé (+/− si présents dans le fichier).</p>` : ''}
+        <p class="err"></p></div>
+        <div class="mfoot"><button class="btn ghost" data-a="close">Annuler</button>${fresh.length ? '<button class="btn pri" data-a="stravaGo">Importer</button>' : ''}</div>`;
+    }
+  };
+}
+
+// =====================================================================
 // Réglages / sauvegarde
 // =====================================================================
 function settingsModal() {
@@ -797,6 +1044,8 @@ function settingsModal() {
         <div class="stack">
           <p class="mute">Tes données sont enregistrées sur cet appareil (${n} séance${n > 1 ? 's' : ''}, ${db.activities.length} activité${db.activities.length > 1 ? 's' : ''}). Pour les transférer entre ton PC et ton téléphone, exporte un fichier de sauvegarde puis importe-le sur l’autre appareil.</p>
           <div class="btns"><button class="btn" data-a="export">Exporter la sauvegarde</button><label class="btn" style="cursor:pointer">Importer une sauvegarde<input type="file" accept=".json,application/json" data-c="import" class="sr"></label></div>
+          <div class="fld"><span class="lbl">Strava</span><label class="btn" style="cursor:pointer;justify-self:start">Importer mes courses (activities.csv)<input type="file" accept=".csv,text/csv" data-c="stravaFile" class="sr"></label>
+            <p class="hint">Sur strava.com : Paramètres › Mon compte › « Télécharger ou supprimer votre compte » › demander l’archive. Décompresse le .zip reçu et choisis le fichier <b>activities.csv</b>. Seules les courses à pied sont importées ; un second import ne crée pas de doublons.</p></div>
           ${deferredInstall ? '<button class="btn pri" data-a="install">Installer l’application</button>' : '<p class="mute" style="font-size:13px">Pour installer l’application : sur Android, menu ⋮ de Chrome puis « Installer l’application » ; sur Windows, icône d’installation dans la barre d’adresse d’Edge ou de Chrome.</p>'}
           <button class="btn ghost danger" data-a="wipe" style="justify-self:start">Effacer toutes les données</button>
         </div><div class="mfoot"><button class="btn" data-a="close">Fermer</button></div>`;
@@ -829,14 +1078,30 @@ const A = {
 
   // validation
   validate: t => openModal(validateModal(t.dataset.id)),
-  addExo: t => { const c = $('#exos', sheetOf(t)); c.insertAdjacentHTML('beforeend', exoRow({ n: '', p: '' })); c.lastElementChild.querySelector('input').focus(); },
+  addExo: t => { const c = $('#exos', sheetOf(t)); c.insertAdjacentHTML('beforeend', exoRow({ n: '' })); c.lastElementChild.querySelector('input').focus(); },
   rmExo: t => { const c = t.closest('#exos'); if (c.children.length > 1) t.closest('.exo').remove(); else $$('input', t.closest('.exo')).forEach(i => i.value = ''); },
   feel: t => { const on = t.getAttribute('aria-pressed') === 'true'; $$('.feel button', t.parentElement).forEach(b => b.setAttribute('aria-pressed', 'false')); if (!on) t.setAttribute('aria-pressed', 'true'); },
   confirmValidate: t => {
     const s = getS(t.dataset.id), root = sheetOf(t); if (!s) return;
     const type = typeOf(s.actId), res = {};
-    if (type === 'distance') res.km = parseNum(val(root, 'km'));
-    if (type === 'perf') res.exos = $$('.exo', root).map(r => ({ n: val(r, 'en').trim(), p: val(r, 'ep').trim() })).filter(e => e.n || e.p);
+    if (type === 'distance') {
+      const time = parseDur(val(root, 'time'));
+      if (Number.isNaN(time)) return showErr(root, 'Temps invalide : utilise h:mm:ss ou mm:ss (ex. 52:30).');
+      const bad = ['km', 'dplus', 'dminus'].find(n => val(root, n).trim() && parseNum(val(root, n)) == null);
+      if (bad) return showErr(root, 'Les km et dénivelés doivent être des nombres positifs.');
+      res.km = parseNum(val(root, 'km')); res.time = time; res.dplus = parseNum(val(root, 'dplus')); res.dminus = parseNum(val(root, 'dminus'));
+    }
+    if (type === 'qty') {
+      const q = parseInt0(val(root, 'qty'));
+      if (val(root, 'qty').trim() && q == null) return showErr(root, 'La quantité doit être un entier positif.');
+      res.qty = q;
+    }
+    if (type === 'perf') {
+      const rows = $$('.exo', root);
+      for (const r of rows) for (const n of ['es', 'er']) if (val(r, n).trim() && parseInt0(val(r, n)) == null) return showErr(root, 'Séries et répétitions doivent être des entiers positifs.');
+      if (rows.some(r => val(r, 'ek').trim() && parseNum(val(r, 'ek')) == null)) return showErr(root, 'La charge doit être un nombre positif (kg).');
+      res.exos = rows.map(r => ({ n: val(r, 'en').trim(), s: parseInt0(val(r, 'es')), r: parseInt0(val(r, 'er')), k: parseNum(val(r, 'ek')), p: val(r, 'ep').trim() })).filter(e => e.n || e.r != null || e.k != null || e.s != null || e.p);
+    }
     const f = $('.feel [aria-pressed="true"]', root); res.feeling = f ? +f.dataset.v : null;
     res.note = val(root, 'note').trim();
     const wasDone = s.done;
@@ -936,6 +1201,22 @@ const A = {
     });
   },
 
+  // import Strava
+  stravaGo: t => {
+    const root = sheetOf(t), p = stravaPending; if (!p) return;
+    let actId = val(root, 'target');
+    if (actId === '__new') {
+      let name = 'Course à pied', i = 2;
+      while (db.activities.some(a => a.name.toLowerCase() === name.toLowerCase())) name = `Course à pied ${i++}`;
+      const a = { id: uid(), name, color: freeColor(), type: 'distance' }; db.activities.push(a); actId = a.id;
+    }
+    if (!actId) return showErr(root, 'Choisis une activité.');
+    p.fresh.forEach(r => db.sessions.push({ id: uid(), date: r.date, actId, info: r.name ? `Strava : ${r.name}` : 'Importé de Strava', km: null, seriesId: null, done: true, doneAt: Date.now(), strava: r.key,
+      result: { km: r.km, time: r.time, dplus: r.dplus, dminus: r.dminus, feeling: null, note: '' } }));
+    const n = p.fresh.length; stravaPending = null;
+    save(); closeModal(2); render(); toast(`${n} course${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''}`);
+  },
+
   // calendrier
   calView: t => { ui.cal.view = t.dataset.v; render(); },
   calNav: t => {
@@ -973,6 +1254,15 @@ const C = {
   editAct: t => { t.closest('.planform').dataset.km = typeOf(t.value) === 'distance' ? 1 : 0; },
   planPrev: t => updatePreview(t.closest('.planform')),
   customColor: t => { const r = sheetOf(t); r.querySelector('[name=color]').value = t.value; $$('.sw', r).forEach(b => b.setAttribute('aria-pressed', 'false')); },
+  stravaFile: t => {
+    const f = t.files && t.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try { stravaPending = parseStrava(String(rd.result)); openModal(stravaModal()); }
+      catch (e) { toast('Fichier non reconnu : choisis le fichier activities.csv de l’export Strava.'); }
+    };
+    rd.readAsText(f); t.value = '';
+  },
   import: t => {
     const f = t.files && t.files[0]; if (!f) return;
     const rd = new FileReader();
